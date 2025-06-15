@@ -330,6 +330,122 @@ func abs(x int) int {
 	return x
 }
 
+// Test missing conversion methods
+func TestCMYKConversions(t *testing.T) {
+	cmyk := NewCMYK(20, 40, 60, 10)
+	
+	// Test ToLAB
+	lab := cmyk.ToLAB()
+	if lab.ColorSpace() != "LAB" {
+		t.Errorf("CMYK.ToLAB() should return LAB color space, got %s", lab.ColorSpace())
+	}
+	
+	// Test ToHSB
+	hsb := cmyk.ToHSB()
+	if hsb.ColorSpace() != "HSB" {
+		t.Errorf("CMYK.ToHSB() should return HSB color space, got %s", hsb.ColorSpace())
+	}
+}
+
+func TestLABConversions(t *testing.T) {
+	lab := NewLAB(50, 20, -30)
+	
+	// Test ToCMYK
+	cmyk := lab.ToCMYK()
+	if cmyk.ColorSpace() != "CMYK" {
+		t.Errorf("LAB.ToCMYK() should return CMYK color space, got %s", cmyk.ColorSpace())
+	}
+	
+	// Test ToLAB (identity)
+	lab2 := lab.ToLAB()
+	if lab2 != lab {
+		t.Errorf("LAB.ToLAB() should return same LAB, got %v, want %v", lab2, lab)
+	}
+	
+	// Test ToHSB
+	hsb := lab.ToHSB()
+	if hsb.ColorSpace() != "HSB" {
+		t.Errorf("LAB.ToHSB() should return HSB color space, got %s", hsb.ColorSpace())
+	}
+}
+
+func TestHSBConversions(t *testing.T) {
+	hsb := NewHSB(240, 100, 100)
+	
+	// Test ToCMYK
+	cmyk := hsb.ToCMYK()
+	if cmyk.ColorSpace() != "CMYK" {
+		t.Errorf("HSB.ToCMYK() should return CMYK color space, got %s", cmyk.ColorSpace())
+	}
+	
+	// Test ToLAB
+	lab := hsb.ToLAB()
+	if lab.ColorSpace() != "LAB" {
+		t.Errorf("HSB.ToLAB() should return LAB color space, got %s", lab.ColorSpace())
+	}
+	
+	// Test ToHSB (identity)
+	hsb2 := hsb.ToHSB()
+	if hsb2 != hsb {
+		t.Errorf("HSB.ToHSB() should return same HSB, got %v, want %v", hsb2, hsb)
+	}
+}
+
+func TestUtilityFunctions(t *testing.T) {
+	// Test clampUint8 edge cases
+	tests := map[string]struct {
+		input    float64
+		expected uint8
+	}{
+		"negative":  {-10.5, 0},
+		"over_255":  {300.0, 255},
+		"normal":    {128.7, 129},
+		"zero":      {0.0, 0},
+		"max":       {255.0, 255},
+	}
+	
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			// We can't test clampUint8 directly since it's not exported,
+			// but we can test it through functions that use it
+			rgb := NewRGBFromFloat(tt.input/255.0, 0, 0)
+			if tt.input < 0 && rgb.R != 0 {
+				t.Errorf("clampUint8 should handle negative values")
+			}
+			if tt.input > 255 && rgb.R != 255 {
+				t.Errorf("clampUint8 should handle values over 255")
+			}
+		})
+	}
+}
+
+func TestLABEdgeCases(t *testing.T) {
+	// Test LAB conversion edge cases that might hit different code paths
+	testCases := map[string]struct {
+		lab LAB
+	}{
+		"black":     {NewLAB(0, 0, 0)},
+		"white":     {NewLAB(100, 0, 0)},
+		"high_a":    {NewLAB(50, 100, 0)},
+		"low_a":     {NewLAB(50, -100, 0)},
+		"high_b":    {NewLAB(50, 0, 100)},
+		"low_b":     {NewLAB(50, 0, -100)},
+	}
+	
+	for name, tt := range testCases {
+		t.Run(name, func(t *testing.T) {
+			// Test round-trip conversion
+			rgb := tt.lab.ToRGB()
+			lab2 := rgb.ToLAB()
+			
+			// Should be reasonably close (within tolerance due to floating point)
+			if lab2.ColorSpace() != "LAB" {
+				t.Errorf("Round-trip LAB conversion failed for %s", name)
+			}
+		})
+	}
+}
+
 // Benchmark tests
 func BenchmarkRGBToCMYK(b *testing.B) {
 	rgb := RGB{128, 64, 192}

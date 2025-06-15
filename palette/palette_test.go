@@ -492,3 +492,131 @@ func BenchmarkConvertToColorSpace(b *testing.B) {
 		_, _ = p.ConvertToColorSpace("CMYK")
 	}
 }
+
+func TestPaletteEdgeCases(t *testing.T) {
+	// Test ConvertToColorSpace with unsupported color space
+	p := New("Test")
+	p.Add(color.NewRGB(255, 0, 0), "Red")
+	
+	converted, err := p.ConvertToColorSpace("INVALID")
+	if err == nil {
+		t.Error("Expected error for invalid color space")
+	}
+	if converted != nil {
+		t.Error("Expected nil palette for invalid color space")
+	}
+	
+	// Test empty palette conversion
+	empty := New("Empty")
+	emptyConverted, err := empty.ConvertToColorSpace("CMYK")
+	if err != nil {
+		t.Errorf("Unexpected error converting empty palette: %v", err)
+	}
+	if emptyConverted.Len() != 0 {
+		t.Error("Converted empty palette should still be empty")
+	}
+}
+
+func TestMetadataEdgeCases(t *testing.T) {
+	p := New("Test")
+	
+	// Test SetMetadata with empty key
+	p.SetMetadata("", "value")
+	if value, exists := p.GetMetadata(""); exists {
+		t.Errorf("Empty key should not be allowed, but got value: %v", value)
+	}
+	
+	// Test GetMetadata for non-existent key
+	value, exists := p.GetMetadata("nonexistent")
+	if exists {
+		t.Errorf("Non-existent key should return false, but got: %v", value)
+	}
+	if value != "" {
+		t.Errorf("Non-existent key should return empty string, but got: %v", value)
+	}
+}
+
+func TestStringFormatting(t *testing.T) {
+	tests := map[string]struct {
+		setup    func() *Palette
+		expected string
+	}{
+		"empty_palette": {
+			setup: func() *Palette {
+				return New("Empty")
+			},
+			expected: "Empty (0 colors)",
+		},
+		"single_color": {
+			setup: func() *Palette {
+				p := New("Single")
+				p.Add(color.NewRGB(255, 0, 0), "Red")
+				return p
+			},
+			expected: "Single (1 color)\n  Red: RGB(255, 0, 0)",
+		},
+		"multiple_colors": {
+			setup: func() *Palette {
+				p := New("Multiple")
+				p.Add(color.NewRGB(255, 0, 0), "Red")
+				p.Add(color.NewRGB(0, 255, 0), "Green")
+				return p
+			},
+			expected: "Multiple (2 colors)\n  Red: RGB(255, 0, 0)\n  Green: RGB(0, 255, 0)",
+		},
+		"with_description": {
+			setup: func() *Palette {
+				p := New("Described")
+				p.Description = "A test palette"
+				p.Add(color.NewRGB(255, 0, 0), "Red")
+				return p
+			},
+			expected: "Described - A test palette (1 color)\n  Red: RGB(255, 0, 0)",
+		},
+	}
+	
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			p := tt.setup()
+			result := p.String()
+			if result != tt.expected {
+				t.Errorf("String() = %q, want %q", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestListMetadataKeys(t *testing.T) {
+	p := New("Test")
+	
+	// Test empty metadata
+	keys := p.ListMetadataKeys()
+	if len(keys) != 0 {
+		t.Errorf("Empty palette should have no metadata keys, got %v", keys)
+	}
+	
+	// Test with metadata
+	p.SetMetadata("key1", "value1")
+	p.SetMetadata("key2", "value2")
+	p.SetMetadata("key3", "value3")
+	
+	keys = p.ListMetadataKeys()
+	if len(keys) != 3 {
+		t.Errorf("Expected 3 metadata keys, got %d", len(keys))
+	}
+	
+	// Keys should be sorted
+	expectedKeys := []string{"key1", "key2", "key3"}
+	for i, expected := range expectedKeys {
+		if i >= len(keys) || keys[i] != expected {
+			t.Errorf("Expected key %d to be %s, got %v", i, expected, keys)
+		}
+	}
+	
+	// Test after removing metadata
+	p.RemoveMetadata("key2")
+	keys = p.ListMetadataKeys()
+	if len(keys) != 2 {
+		t.Errorf("Expected 2 metadata keys after removal, got %d", len(keys))
+	}
+}

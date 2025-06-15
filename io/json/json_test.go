@@ -499,3 +499,247 @@ func BenchmarkExport(b *testing.B) {
 		_ = exporter.Export(p, &output)
 	}
 }
+
+func TestJSONErrorCases(t *testing.T) {
+	importer := NewImporter()
+	
+	tests := map[string]struct {
+		json   string
+		hasErr bool
+	}{
+		"invalid_json": {
+			json:   "{invalid json",
+			hasErr: true,
+		},
+		"empty_object": {
+			json:   "{}",
+			hasErr: true, // No recognizable color data
+		},
+		"null_values": {
+			json:   `{"colors": [{"name": "Red", "rgb": null}]}`,
+			hasErr: true,
+		},
+		"invalid_hex": {
+			json:   `{"colors": [{"name": "Red", "hex": "#XYZ"}]}`,
+			hasErr: true,
+		},
+		"invalid_rgb_values": {
+			json:   `{"colors": [{"name": "Red", "rgb": {"r": "invalid", "g": 0, "b": 0}}]}`,
+			hasErr: true,
+		},
+		"insufficient_values": {
+			json:   `{"colors": [{"name": "Red", "values": [255]}]}`,
+			hasErr: true,
+		},
+		"empty_colors_array": {
+			json:   `{"colors": []}`,
+			hasErr: false, // Should create empty palette
+		},
+		"mixed_valid_invalid": {
+			json: `{
+				"colors": [
+					{"name": "Red", "hex": "#FF0000"},
+					{"name": "Invalid", "rgb": {"r": "bad", "g": 0, "b": 0}}
+				]
+			}`,
+			hasErr: true, // Should fail on any invalid color
+		},
+	}
+	
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			reader := strings.NewReader(tt.json)
+			_, err := importer.Import(reader)
+			
+			if tt.hasErr && err == nil {
+				t.Errorf("Expected error for %s, got none", name)
+			}
+			if !tt.hasErr && err != nil {
+				t.Errorf("Unexpected error for %s: %v", name, err)
+			}
+		})
+	}
+}
+
+func TestJSONGenericFormat(t *testing.T) {
+	// Test parsing generic JSON objects that aren't structured palettes
+	tests := map[string]struct {
+		json   string
+		hasErr bool
+	}{
+		"color_object": {
+			json: `{
+				"red": "#FF0000",
+				"green": [0, 255, 0],
+				"blue": {"r": 0, "g": 0, "b": 255}
+			}`,
+			hasErr: false,
+		},
+		"nested_invalid": {
+			json: `{
+				"colors": {
+					"red": "invalid_color"
+				}
+			}`,
+			hasErr: false, // Should skip invalid colors
+		},
+		"array_format": {
+			json: `[
+				{"name": "Red", "hex": "#FF0000"},
+				{"name": "Green", "rgb": {"r": 0, "g": 255, "b": 0}}
+			]`,
+			hasErr: false,
+		},
+	}
+	
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			importer := NewImporter()
+			reader := strings.NewReader(tt.json)
+			palette, err := importer.Import(reader)
+			
+			if tt.hasErr && err == nil {
+				t.Errorf("Expected error for %s, got none", name)
+			}
+			if !tt.hasErr && err != nil {
+				t.Errorf("Unexpected error for %s: %v", name, err)
+			}
+			if !tt.hasErr && palette == nil {
+				t.Errorf("Expected palette for %s, got nil", name)
+			}
+		})
+	}
+}
+
+func TestJSONExporterOptions(t *testing.T) {
+	p := palette.New("Test Palette")
+	p.Description = "A test palette"
+	p.Add(color.NewRGB(255, 0, 0), "Red")
+	p.Add(color.NewRGB(0, 255, 0), "Green")
+	p.SetMetadata("source", "test")
+	p.SetMetadata("version", "1.0")
+	
+	tests := map[string]struct {
+		setupExporter func() *Exporter
+		checkOutput   func(string) error
+	}{
+		"with_metadata": {
+			setupExporter: func() *Exporter {
+				e := NewExporter()
+				e.IncludeMetadata = true
+				return e
+			},
+			checkOutput: func(output string) error {
+				if !strings.Contains(output, "metadata") {
+					return fmt.Errorf("output should contain metadata")
+				}
+				if !strings.Contains(output, "source") {
+					return fmt.Errorf("output should contain source metadata")
+				}
+				return nil
+			},
+		},
+		"without_metadata": {
+			setupExporter: func() *Exporter {
+				e := NewExporter()
+				e.IncludeMetadata = false
+				return e
+			},
+			checkOutput: func(output string) error {
+				if strings.Contains(output, "metadata") {
+					return fmt.Errorf("output should not contain metadata")
+				}
+				return nil
+			},
+		},
+		"pretty_format": {
+			setupExporter: func() *Exporter {
+				e := NewExporter()
+				e.PrettyPrint = true
+				return e
+			},
+			checkOutput: func(output string) error {
+				if !strings.Contains(output, "\n") {
+					return fmt.Errorf("pretty print should contain newlines")
+				}
+				return nil
+			},
+		},
+	}
+	
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			exporter := tt.setupExporter()
+			
+			var output strings.Builder
+			err := exporter.Export(p, &output)
+			if err != nil {
+				t.Errorf("Export failed: %v", err)
+			}
+			
+			if err := tt.checkOutput(output.String()); err != nil {
+				t.Errorf("Output check failed: %v", err)
+			}
+		})
+	}
+}
+
+func TestJSONRoundTrip(t *testing.T) {
+	// Test that we can export and re-import various color formats
+	colors := []struct {
+		name  string
+		color color.Color
+	}{
+		{"Red", color.NewRGB(255, 0, 0)},
+		{"Green", color.NewRGB(0, 255, 0)},
+		{"Blue", color.NewRGB(0, 0, 255)},
+		{"CMYK", color.NewCMYK(50, 25, 0, 0)},
+		{"LAB", color.NewLAB(50, 20, -30)},
+		{"HSB", color.NewHSB(240, 100, 100)},
+	}
+	
+	original := palette.New("Round Trip Test")
+	for _, c := range colors {
+		original.Add(c.color, c.name)
+	}
+	
+	// Export
+	exporter := NewExporter()
+	exporter.PrettyPrint = true
+	var output strings.Builder
+	err := exporter.Export(original, &output)
+	if err != nil {
+		t.Fatalf("Export failed: %v", err)
+	}
+	
+	// Re-import
+	importer := NewImporter()
+	reader := strings.NewReader(output.String())
+	imported, err := importer.Import(reader)
+	if err != nil {
+		t.Fatalf("Import failed: %v", err)
+	}
+	
+	// Verify
+	if imported.Len() != original.Len() {
+		t.Errorf("Round trip changed palette length: got %d, want %d", imported.Len(), original.Len())
+	}
+	
+	for i := range original.Len() {
+		origColor, _ := original.Get(i)
+		impColor, _ := imported.Get(i)
+		
+		if origColor.Name != impColor.Name {
+			t.Errorf("Round trip changed color name at %d: got %s, want %s", i, impColor.Name, origColor.Name)
+		}
+		
+		// Colors should be close (may not be exact due to conversions)
+		if origColor.Color.ColorSpace() == "RGB" && impColor.Color.ColorSpace() == "RGB" {
+			origRGB := origColor.Color.ToRGB()
+			impRGB := impColor.Color.ToRGB()
+			if origRGB != impRGB {
+				t.Errorf("Round trip changed RGB color at %d: got %v, want %v", i, impRGB, origRGB)
+			}
+		}
+	}
+}

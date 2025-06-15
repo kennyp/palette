@@ -579,3 +579,100 @@ func BenchmarkExportRGB(b *testing.B) {
 		_ = exporter.Export(p, &output)
 	}
 }
+
+func TestCSVErrorCases(t *testing.T) {
+	importer := NewImporter()
+	
+	tests := map[string]struct {
+		csv    string
+		hasErr bool
+	}{
+		"empty_file": {
+			csv:    "",
+			hasErr: true,
+		},
+		"only_header": {
+			csv:    "Name,R,G,B\n",
+			hasErr: false, // Should work with empty palette
+		},
+		"invalid_rgb_values": {
+			csv:    "Name,R,G,B\nRed,300,0,0\n",
+			hasErr: false, // Should clamp values
+		},
+		"missing_columns": {
+			csv:    "Name,R\nRed,255\n",
+			hasErr: true,
+		},
+		"invalid_hex": {
+			csv:    "Name,Hex\nRed,#XYZ\n",
+			hasErr: true,
+		},
+		"malformed_csv": {
+			csv:    "Name,R,G,B\nRed,255,0\n", // Missing B value
+			hasErr: true,
+		},
+		"invalid_color_format": {
+			csv:    "Name,Invalid\nRed,something\n",
+			hasErr: true,
+		},
+	}
+	
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			reader := strings.NewReader(tt.csv)
+			_, err := importer.Import(reader)
+			
+			if tt.hasErr && err == nil {
+				t.Errorf("Expected error for %s, got none", name)
+			}
+			if !tt.hasErr && err != nil {
+				t.Errorf("Unexpected error for %s: %v", name, err)
+			}
+		})
+	}
+}
+
+func TestCSVExporterFormats(t *testing.T) {
+	p := palette.New("Test")
+	p.Add(color.NewRGB(255, 0, 0), "Red")
+	p.Add(color.NewRGB(0, 255, 0), "Green")
+	
+	formats := []ColorFormat{
+		FormatHex,
+		FormatRGB,
+		FormatRGBFloat,
+		FormatCMYK,
+		FormatHSB,
+		FormatLAB,
+	}
+	
+	for _, format := range formats {
+		t.Run(fmt.Sprintf("format_%d", format), func(t *testing.T) {
+			exporter := NewExporter()
+			exporter.ColorFormat = format
+			
+			var output strings.Builder
+			err := exporter.Export(p, &output)
+			if err != nil {
+				t.Errorf("Export failed for format %d: %v", format, err)
+			}
+			
+			result := output.String()
+			if result == "" {
+				t.Errorf("Export produced empty output for format %d", format)
+			}
+			
+			// Verify we can re-import what we exported
+			reader := strings.NewReader(result)
+			importer := NewImporter()
+			imported, err := importer.Import(reader)
+			if err != nil {
+				t.Errorf("Failed to re-import exported %d format: %v", format, err)
+			}
+			
+			if imported.Len() != p.Len() {
+				t.Errorf("Re-imported palette has different length: got %d, want %d", imported.Len(), p.Len())
+			}
+		})
+	}
+}
