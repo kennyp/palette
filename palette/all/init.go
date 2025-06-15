@@ -1,4 +1,4 @@
-package palette
+package all
 
 import (
 	paletteio "github.com/kennyp/palette/io"

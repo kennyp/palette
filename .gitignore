@@ -1,5 +1,6 @@
 # Go coverage files
 *.out
+coverage.html
 
 # Go test cache
 *.test

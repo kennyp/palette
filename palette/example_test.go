@@ -5,7 +5,7 @@ import (
 	"log"
 	"strings"
 
-	_ "github.com/kennyp/palette" // Initialize format importers/exporters
+	_ "github.com/kennyp/palette/palette/all" // Initialize format importers/exporters
 	"github.com/kennyp/palette/color"
 	paletteio "github.com/kennyp/palette/io"
 	"github.com/kennyp/palette/io/csv"
