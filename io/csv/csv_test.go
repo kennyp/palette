@@ -508,7 +508,7 @@ func TestRoundTrip(t *testing.T) {
 	}
 	
 	// Compare colors
-	for i := 0; i < original.Len(); i++ {
+	for i := range original.Len() {
 		origColor, _ := original.Get(i)
 		impColor, _ := imported.Get(i)
 		
@@ -559,7 +559,7 @@ Cyan,0,255,255
 Magenta,255,0,255`
 	
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		reader := strings.NewReader(csvData)
 		_, _ = importer.Import(reader)
 	}
@@ -569,12 +569,12 @@ func BenchmarkExportRGB(b *testing.B) {
 	exporter := NewExporter()
 	
 	p := palette.New("Benchmark")
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		p.Add(color.NewRGB(uint8(i), uint8(i), uint8(i)), fmt.Sprintf("Color%d", i))
 	}
 	
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		var output strings.Builder
 		_ = exporter.Export(p, &output)
 	}

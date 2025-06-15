@@ -213,7 +213,7 @@ Forest Green,34,139,34`
 	fmt.Printf("Number of colors: %d\n", p.Len())
 	
 	// Show each color
-	for i := 0; i < p.Len(); i++ {
+	for i := range p.Len() {
 		if c, err := p.Get(i); err == nil {
 			fmt.Printf("  %s: %s\n", c.Name, c.Color.String())
 		}

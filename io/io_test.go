@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 	"testing"
 
@@ -23,12 +24,7 @@ func (m *mockImporter) Import(r io.Reader) (*palette.Palette, error) {
 }
 
 func (m *mockImporter) CanImport(format string) bool {
-	for _, f := range m.formats {
-		if f == format {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(m.formats, format)
 }
 
 func (m *mockImporter) SupportedFormats() []string {
@@ -51,12 +47,7 @@ func (m *mockExporter) Export(p *palette.Palette, w io.Writer) error {
 }
 
 func (m *mockExporter) CanExport(format string) bool {
-	for _, f := range m.formats {
-		if f == format {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(m.formats, format)
 }
 
 func (m *mockExporter) SupportedFormats() []string {
@@ -452,12 +443,7 @@ func TestDeduplication(t *testing.T) {
 
 // Helper function to check if slice contains string
 func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(slice, item)
 }
 
 // Benchmark tests
@@ -465,7 +451,7 @@ func BenchmarkFindImporter(b *testing.B) {
 	registry := NewRegistry()
 	
 	// Register many importers
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		importer := &mockImporter{
 			formats: []string{fmt.Sprintf(".test%d", i)},
 		}
@@ -473,7 +459,7 @@ func BenchmarkFindImporter(b *testing.B) {
 	}
 	
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_, _ = registry.FindImporter(".test50")
 	}
 }
@@ -482,7 +468,7 @@ func BenchmarkNormalizeFormat(b *testing.B) {
 	formats := []string{"json", ".json", "application/json", "CSV", "  aco  "}
 	
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		_ = normalizeFormat(formats[i%len(formats)])
 	}
 }

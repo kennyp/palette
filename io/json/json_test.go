@@ -189,19 +189,19 @@ func TestImportGenericValues(t *testing.T) {
 	importer := NewImporter()
 	
 	tests := map[string]struct {
-		values     interface{}
+		values     any
 		colorSpace string
 		expected   color.Color
 		shouldErr  bool
 	}{
-		"RGB float slice":  {[]interface{}{255.0, 0.0, 0.0}, "RGB", color.NewRGB(255, 0, 0), false},
-		"CMYK values":      {[]interface{}{100.0, 0.0, 100.0, 0.0}, "CMYK", color.NewCMYK(100, 0, 100, 0), false},
-		"HSB values":       {[]interface{}{240.0, 100.0, 100.0}, "HSB", color.NewHSB(240, 100, 100), false},
-		"LAB values":       {[]interface{}{50.0, 20.0, -30.0}, "LAB", color.NewLAB(50, 20, -30), false},
-		"Default to RGB":   {[]interface{}{128.0, 64.0, 192.0}, "unknown", color.NewRGB(128, 64, 192), false},
-		"Insufficient RGB": {[]interface{}{255.0, 0.0}, "RGB", nil, true},
+		"RGB float slice":  {[]any{255.0, 0.0, 0.0}, "RGB", color.NewRGB(255, 0, 0), false},
+		"CMYK values":      {[]any{100.0, 0.0, 100.0, 0.0}, "CMYK", color.NewCMYK(100, 0, 100, 0), false},
+		"HSB values":       {[]any{240.0, 100.0, 100.0}, "HSB", color.NewHSB(240, 100, 100), false},
+		"LAB values":       {[]any{50.0, 20.0, -30.0}, "LAB", color.NewLAB(50, 20, -30), false},
+		"Default to RGB":   {[]any{128.0, 64.0, 192.0}, "unknown", color.NewRGB(128, 64, 192), false},
+		"Insufficient RGB": {[]any{255.0, 0.0}, "RGB", nil, true},
 		"Invalid values":   {"not an array", "RGB", nil, true},
-		"Non-numeric":      {[]interface{}{"red", "green", "blue"}, "RGB", nil, true},
+		"Non-numeric":      {[]any{"red", "green", "blue"}, "RGB", nil, true},
 	}
 	
 	for name, tt := range tests {
@@ -479,7 +479,7 @@ func BenchmarkImport(b *testing.B) {
 	}`
 	
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		reader := strings.NewReader(jsonData)
 		_, _ = importer.Import(reader)
 	}
@@ -489,12 +489,12 @@ func BenchmarkExport(b *testing.B) {
 	exporter := NewExporter()
 	
 	p := palette.New("Benchmark")
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		p.Add(color.NewRGB(uint8(i), 0, 0), fmt.Sprintf("Color%d", i))
 	}
 	
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		var output strings.Builder
 		_ = exporter.Export(p, &output)
 	}

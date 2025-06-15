@@ -333,28 +333,28 @@ func abs(x int) int {
 // Benchmark tests
 func BenchmarkRGBToCMYK(b *testing.B) {
 	rgb := RGB{128, 64, 192}
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = rgb.ToCMYK()
 	}
 }
 
 func BenchmarkRGBToHSB(b *testing.B) {
 	rgb := RGB{128, 64, 192}
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = rgb.ToHSB()
 	}
 }
 
 func BenchmarkRGBToLAB(b *testing.B) {
 	rgb := RGB{128, 64, 192}
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = rgb.ToLAB()
 	}
 }
 
 func BenchmarkLABToRGB(b *testing.B) {
 	lab := LAB{50, 20, -30}
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = lab.ToRGB()
 	}
 }

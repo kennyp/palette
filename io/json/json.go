@@ -42,7 +42,7 @@ func (i *Importer) Import(r io.Reader) (*palette.Palette, error) {
 	}
 
 	// Try to parse as generic color object
-	var colorObj map[string]interface{}
+	var colorObj map[string]any
 	if err := json.Unmarshal(data, &colorObj); err == nil {
 		return i.convertFromGenericJSON(colorObj)
 	}
@@ -65,7 +65,7 @@ type PaletteJSON struct {
 	Name        string      `json:"name"`
 	Description string      `json:"description,omitempty"`
 	Colors      []ColorJSON `json:"colors"`
-	Metadata    interface{} `json:"metadata,omitempty"`
+	Metadata    any `json:"metadata,omitempty"`
 }
 
 // ColorJSON represents the JSON structure for a color.
@@ -77,8 +77,8 @@ type ColorJSON struct {
 	HSB        *HSBValues             `json:"hsb,omitempty"`
 	LAB        *LABValues             `json:"lab,omitempty"`
 	Hex        string                 `json:"hex,omitempty"`
-	Values     interface{}            `json:"values,omitempty"`
-	Metadata   map[string]interface{} `json:"metadata,omitempty"`
+	Values     any            `json:"values,omitempty"`
+	Metadata   map[string]any `json:"metadata,omitempty"`
 }
 
 // RGBValues represents RGB color values.
@@ -162,7 +162,7 @@ func (i *Importer) convertFromColorArray(colors []ColorJSON) (*palette.Palette, 
 }
 
 // convertFromGenericJSON attempts to parse generic JSON color data.
-func (i *Importer) convertFromGenericJSON(data map[string]interface{}) (*palette.Palette, error) {
+func (i *Importer) convertFromGenericJSON(data map[string]any) (*palette.Palette, error) {
 	p := palette.New("JSON Import")
 	p.SetMetadata("format", "JSON")
 
@@ -238,12 +238,12 @@ func (i *Importer) parseHexColor(hex string) (color.Color, error) {
 }
 
 // parseGenericValues parses generic color values based on color space.
-func (i *Importer) parseGenericValues(values interface{}, colorSpace string) (color.Color, error) {
+func (i *Importer) parseGenericValues(values any, colorSpace string) (color.Color, error) {
 	// Try to convert to float64 slice
 	var nums []float64
 
 	switch v := values.(type) {
-	case []interface{}:
+	case []any:
 		nums = make([]float64, len(v))
 		for i, val := range v {
 			if f, ok := val.(float64); ok {
@@ -295,7 +295,7 @@ func (i *Importer) parseGenericValues(values interface{}, colorSpace string) (co
 }
 
 // tryParseColorValue attempts to parse a value as a color.
-func (i *Importer) tryParseColorValue(key string, value interface{}) color.Color {
+func (i *Importer) tryParseColorValue(key string, value any) color.Color {
 	// Try hex string
 	if str, ok := value.(string); ok {
 		if c, err := i.parseHexColor(str); err == nil {
@@ -304,7 +304,7 @@ func (i *Importer) tryParseColorValue(key string, value interface{}) color.Color
 	}
 
 	// Try array of numbers
-	if arr, ok := value.([]interface{}); ok && len(arr) >= 3 {
+	if arr, ok := value.([]any); ok && len(arr) >= 3 {
 		var nums []float64
 		for _, v := range arr {
 			if f, ok := v.(float64); ok {
@@ -371,7 +371,7 @@ func (e *Exporter) Export(p *palette.Palette, w io.Writer) error {
 
 	// Include metadata if requested
 	if e.IncludeMetadata {
-		metadata := make(map[string]interface{})
+		metadata := make(map[string]any)
 		for _, key := range p.ListMetadataKeys() {
 			if value, ok := p.GetMetadata(key); ok {
 				metadata[key] = value
@@ -383,7 +383,7 @@ func (e *Exporter) Export(p *palette.Palette, w io.Writer) error {
 	}
 
 	// Convert colors
-	for i := 0; i < p.Len(); i++ {
+	for i := range p.Len() {
 		namedColor, err := p.Get(i)
 		if err != nil {
 			return fmt.Errorf("failed to get color at index %d: %w", i, err)

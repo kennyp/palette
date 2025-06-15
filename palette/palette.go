@@ -2,6 +2,7 @@ package palette
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 
@@ -119,9 +120,7 @@ func (p *Palette) Clone() *Palette {
 	copy(clone.Colors, p.Colors)
 
 	// Copy metadata
-	for k, v := range p.metadata {
-		clone.metadata[k] = v
-	}
+	maps.Copy(clone.metadata, p.metadata)
 
 	return clone
 }

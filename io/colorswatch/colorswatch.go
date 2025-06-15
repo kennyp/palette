@@ -107,7 +107,7 @@ func (e *Exporter) Export(p *palette.Palette, w io.Writer) error {
 
 	// Convert colors
 	acs.Colors = make([]*colorswatch.Color, 0, p.Len())
-	for i := 0; i < p.Len(); i++ {
+	for i := range p.Len() {
 		namedColor, err := p.Get(i)
 		if err != nil {
 			return fmt.Errorf("failed to get color at index %d: %w", i, err)

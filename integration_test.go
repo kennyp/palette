@@ -57,7 +57,7 @@ func TestFullWorkflow(t *testing.T) {
 	}
 	
 	// Verify all colors are now RGB
-	for i := 0; i < rgbPalette.Len(); i++ {
+	for i := range rgbPalette.Len() {
 		c, _ := rgbPalette.Get(i)
 		if c.Color.ColorSpace() != "RGB" {
 			t.Errorf("Color %d should be RGB, got %s", i, c.Color.ColorSpace())
@@ -211,7 +211,7 @@ func TestLargeDatasets(t *testing.T) {
 	large.Description = "Testing with many colors"
 	
 	// Add 1000 colors with different patterns
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		r := uint8(i % 256)
 		g := uint8((i * 7) % 256)
 		b := uint8((i * 13) % 256)
@@ -264,7 +264,7 @@ func TestLargeDatasets(t *testing.T) {
 	}
 	
 	// Verify all colors are CMYK
-	for i := 0; i < min(10, cmykConverted.Len()); i++ { // Check first 10 colors
+	for i := range min(10, cmykConverted.Len()) { // Check first 10 colors
 		c, _ := cmykConverted.Get(i)
 		if c.Color.ColorSpace() != "CMYK" {
 			t.Errorf("Color %d should be CMYK after conversion, got %s", i, c.Color.ColorSpace())

@@ -306,7 +306,7 @@ func TestConvertToColorSpace(t *testing.T) {
 	}
 	
 	// Check that all colors are now CMYK
-	for i := 0; i < cmykPalette.Len(); i++ {
+	for i := range cmykPalette.Len() {
 		c, _ := cmykPalette.Get(i)
 		if c.Color.ColorSpace() != "CMYK" {
 			t.Errorf("ConvertToColorSpace() color %d is %v, want CMYK", i, c.Color.ColorSpace())
@@ -451,7 +451,7 @@ func BenchmarkAdd(b *testing.B) {
 	red := color.NewRGB(255, 0, 0)
 	
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		p.Add(red, "Red")
 		p.Clear()
 	}
@@ -459,36 +459,36 @@ func BenchmarkAdd(b *testing.B) {
 
 func BenchmarkGet(b *testing.B) {
 	p := New("Benchmark")
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		p.Add(color.NewRGB(uint8(i), 0, 0), "Color")
 	}
 	
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		_, _ = p.Get(i % 100)
 	}
 }
 
 func BenchmarkClone(b *testing.B) {
 	p := New("Benchmark")
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		p.Add(color.NewRGB(uint8(i), 0, 0), "Color")
 	}
 	
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = p.Clone()
 	}
 }
 
 func BenchmarkConvertToColorSpace(b *testing.B) {
 	p := New("Benchmark")
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		p.Add(color.NewRGB(uint8(i), 0, 0), "Color")
 	}
 	
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_, _ = p.ConvertToColorSpace("CMYK")
 	}
 }
