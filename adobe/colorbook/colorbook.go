@@ -55,7 +55,7 @@ const (
 type Color struct {
 	Name       string  `json:"name"`
 	Key        [6]byte `json:"key"`
-	Components [3]byte `json:"components"`
+	Components [4]byte `json:"components"` // Changed to 4 bytes to support CMYK
 }
 
 type ColorBook struct {
@@ -72,7 +72,90 @@ type ColorBook struct {
 }
 
 func (b *ColorBook) MarshalBinary() ([]byte, error) {
-	return nil, errors.New("not implemented")
+	buf := &bytes.Buffer{}
+
+	// Write signature
+	if _, err := buf.WriteString(FileType); err != nil {
+		return nil, fmt.Errorf("failed to write signature: %w", err)
+	}
+
+	// Write version
+	if err := binary.Write(buf, binary.BigEndian, b.Version); err != nil {
+		return nil, fmt.Errorf("failed to write version: %w", err)
+	}
+
+	// Write book ID
+	if err := binary.Write(buf, binary.BigEndian, b.ID); err != nil {
+		return nil, fmt.Errorf("failed to write book ID: %w", err)
+	}
+
+	// Write strings
+	if err := writeString(buf, b.Title); err != nil {
+		return nil, fmt.Errorf("failed to write title: %w", err)
+	}
+
+	if err := writeString(buf, b.Prefix); err != nil {
+		return nil, fmt.Errorf("failed to write prefix: %w", err)
+	}
+
+	if err := writeString(buf, b.Postfix); err != nil {
+		return nil, fmt.Errorf("failed to write postfix: %w", err)
+	}
+
+	if err := writeString(buf, b.Description); err != nil {
+		return nil, fmt.Errorf("failed to write description: %w", err)
+	}
+
+	// Write number of colors
+	numColors := uint16(len(b.Colors))
+	if err := binary.Write(buf, binary.BigEndian, numColors); err != nil {
+		return nil, fmt.Errorf("failed to write number of colors: %w", err)
+	}
+
+	// Write colors per page
+	if err := binary.Write(buf, binary.BigEndian, b.ColorsPerPage); err != nil {
+		return nil, fmt.Errorf("failed to write colors per page: %w", err)
+	}
+
+	// Write key color page
+	if err := binary.Write(buf, binary.BigEndian, b.KeyColorPage); err != nil {
+		return nil, fmt.Errorf("failed to write key color page: %w", err)
+	}
+
+	// Write color type
+	if err := binary.Write(buf, binary.BigEndian, b.ColorType); err != nil {
+		return nil, fmt.Errorf("failed to write color type: %w", err)
+	}
+
+	// Write colors
+	for i, color := range b.Colors {
+		if err := writeString(buf, color.Name); err != nil {
+			return nil, fmt.Errorf("failed to write color %d name: %w", i, err)
+		}
+
+		if _, err := buf.Write(color.Key[:]); err != nil {
+			return nil, fmt.Errorf("failed to write color %d key: %w", i, err)
+		}
+
+		// Write components based on color type
+		switch b.ColorType {
+		case ColorTypeRGB, ColorTypeLab:
+			// RGB and LAB use 3 components
+			components := [3]byte{color.Components[0], color.Components[1], color.Components[2]}
+			if err := binary.Write(buf, binary.BigEndian, components); err != nil {
+				return nil, fmt.Errorf("failed to write color %d components: %w", i, err)
+			}
+		case ColorTypeCMYK:
+			// CMYK uses 4 components
+			if err := binary.Write(buf, binary.BigEndian, color.Components); err != nil {
+				return nil, fmt.Errorf("failed to write color %d components: %w", i, err)
+			}
+		default:
+			return nil, fmt.Errorf("unsupported color type for writing components: %v", b.ColorType)
+		}
+	}
+
+	return buf.Bytes(), nil
 }
 
 func (b *ColorBook) UnmarshalBinary(data []byte) (err error) {
@@ -134,7 +217,7 @@ func (b *ColorBook) UnmarshalBinary(data []byte) (err error) {
 		return fmt.Errorf("failed to parse color type (%w)", err)
 	}
 
-	if !(b.ColorType == ColorTypeRGB || b.ColorType != ColorTypeCMYK || b.ColorType == ColorTypeLab) {
+	if !(b.ColorType == ColorTypeRGB || b.ColorType == ColorTypeCMYK || b.ColorType == ColorTypeLab) {
 		return fmt.Errorf("unexpected color type %v", b.ColorType)
 	}
 
@@ -150,8 +233,22 @@ func (b *ColorBook) UnmarshalBinary(data []byte) (err error) {
 			return fmt.Errorf("failed to read key for color %d (%w)", i, err)
 		}
 
-		if err := binary.Read(buf, binary.BigEndian, &c.Components); err != nil {
-			return fmt.Errorf("failed to read components for color %d (%w)", i, err)
+		// Read components based on color type
+		switch b.ColorType {
+		case ColorTypeRGB, ColorTypeLab:
+			// RGB and LAB use 3 components
+			var components [3]byte
+			if err := binary.Read(buf, binary.BigEndian, &components); err != nil {
+				return fmt.Errorf("failed to read components for color %d (%w)", i, err)
+			}
+			c.Components = [4]byte{components[0], components[1], components[2], 0}
+		case ColorTypeCMYK:
+			// CMYK uses 4 components
+			if err := binary.Read(buf, binary.BigEndian, &c.Components); err != nil {
+				return fmt.Errorf("failed to read components for color %d (%w)", i, err)
+			}
+		default:
+			return fmt.Errorf("unsupported color type for reading components: %v", b.ColorType)
 		}
 
 		slog.Debug("parsed color", slog.Int("index", i), slog.Any("color", c))
@@ -190,4 +287,24 @@ func readString(log *slog.Logger, r io.Reader) (string, error) {
 	}
 
 	return ret.String(), nil
+}
+
+func writeString(w io.Writer, s string) error {
+	runes := []rune(s)
+	length := uint32(len(runes))
+
+	// Write length
+	if err := binary.Write(w, binary.BigEndian, length); err != nil {
+		return fmt.Errorf("failed to write string length: %w", err)
+	}
+
+	// Encode to UTF-16 and write
+	encoded := utf16.Encode(runes)
+	for _, u16 := range encoded {
+		if err := binary.Write(w, binary.BigEndian, u16); err != nil {
+			return fmt.Errorf("failed to write UTF-16 character: %w", err)
+		}
+	}
+
+	return nil
 }

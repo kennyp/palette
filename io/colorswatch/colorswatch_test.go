@@ -83,7 +83,7 @@ func TestSupportedFormats(t *testing.T) {
 	importFormats := importer.SupportedFormats()
 	exportFormats := exporter.SupportedFormats()
 	
-	expectedFormats := []string{".aco", "colorswatch"}
+	expectedFormats := []string{".aco", "colorswatch", "swatch"}
 	
 	if len(importFormats) != len(expectedFormats) {
 		t.Errorf("Importer supported formats length = %d, want %d", len(importFormats), len(expectedFormats))

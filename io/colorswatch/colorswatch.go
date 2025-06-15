@@ -62,7 +62,7 @@ func (i *Importer) Import(r io.Reader) (*palette.Palette, error) {
 
 // CanImport returns true if this importer can handle the given format.
 func (i *Importer) CanImport(format string) bool {
-	return format == ".aco" || format == "colorswatch" || format == "swatch"
+	return format == ".aco" || format == ".ACO" || format == "colorswatch" || format == "swatch"
 }
 
 // SupportedFormats returns the list of supported formats.
@@ -142,7 +142,7 @@ func (e *Exporter) Export(p *palette.Palette, w io.Writer) error {
 
 // CanExport returns true if this exporter can handle the given format.
 func (e *Exporter) CanExport(format string) bool {
-	return format == ".aco" || format == "colorswatch" || format == "swatch"
+	return format == ".aco" || format == ".ACO" || format == "colorswatch" || format == "swatch"
 }
 
 // SupportedFormats returns the list of supported formats.

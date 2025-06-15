@@ -62,7 +62,7 @@ func (i *Importer) Import(r io.Reader) (*palette.Palette, error) {
 
 // CanImport returns true if this importer can handle the given format.
 func (i *Importer) CanImport(format string) bool {
-	return format == ".acb" || format == "colorbook"
+	return format == ".acb" || format == ".ACB" || format == "colorbook"
 }
 
 // SupportedFormats returns the list of supported formats.
@@ -165,7 +165,7 @@ func (e *Exporter) Export(p *palette.Palette, w io.Writer) error {
 
 // CanExport returns true if this exporter can handle the given format.
 func (e *Exporter) CanExport(format string) bool {
-	return format == ".acb" || format == "colorbook"
+	return format == ".acb" || format == ".ACB" || format == "colorbook"
 }
 
 // SupportedFormats returns the list of supported formats.
@@ -183,14 +183,11 @@ func convertAdobeColor(c *colorbook.Color, colorType colorbook.ColorType) (color
 		return color.NewRGB(c.Components[0], c.Components[1], c.Components[2]), nil
 
 	case colorbook.ColorTypeCMYK:
-		// Adobe CMYK uses 0-100 values stored in first 4 bytes
-		// But Components is only 3 bytes, so we need to handle this differently
-		// For now, assume the values are scaled 0-255 and convert to 0-100
+		// Adobe CMYK uses 0-255 values, convert to 0-100 percentages
 		cy := uint8((float64(c.Components[0]) / 255.0) * 100)
 		mg := uint8((float64(c.Components[1]) / 255.0) * 100)
 		ye := uint8((float64(c.Components[2]) / 255.0) * 100)
-		// K value might be stored elsewhere or derived
-		k := uint8(0) // Default to 0 for now
+		k := uint8((float64(c.Components[3]) / 255.0) * 100)
 		return color.NewCMYK(cy, mg, ye, k), nil
 
 	case colorbook.ColorTypeLab:
@@ -214,7 +211,7 @@ func convertToAdobeColor(c color.Color, name string, targetType colorbook.ColorT
 	switch targetType {
 	case colorbook.ColorTypeRGB:
 		rgb := c.ToRGB()
-		adobeColor.Components = [3]byte{rgb.R, rgb.G, rgb.B}
+		adobeColor.Components = [4]byte{rgb.R, rgb.G, rgb.B, 0}
 
 	case colorbook.ColorTypeCMYK:
 		cmyk := c.ToCMYK()
@@ -222,11 +219,12 @@ func convertToAdobeColor(c color.Color, name string, targetType colorbook.ColorT
 		cy := uint8((float64(cmyk.C) / 100.0) * 255)
 		mg := uint8((float64(cmyk.M) / 100.0) * 255)
 		ye := uint8((float64(cmyk.Y) / 100.0) * 255)
-		adobeColor.Components = [3]byte{cy, mg, ye}
+		k := uint8((float64(cmyk.K) / 100.0) * 255)
+		adobeColor.Components = [4]byte{cy, mg, ye, k}
 
 	case colorbook.ColorTypeLab:
 		lab := c.ToLAB()
-		adobeColor.Components = [3]byte{byte(lab.L), byte(lab.A), byte(lab.B)}
+		adobeColor.Components = [4]byte{byte(lab.L), byte(lab.A), byte(lab.B), 0}
 
 	default:
 		return nil, fmt.Errorf("unsupported target color type: %v", targetType)
