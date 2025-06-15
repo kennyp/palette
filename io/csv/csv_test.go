@@ -593,11 +593,11 @@ func TestCSVErrorCases(t *testing.T) {
 		},
 		"only_header": {
 			csv:    "Name,R,G,B\n",
-			hasErr: false, // Should work with empty palette
+			hasErr: true, // No data rows means error
 		},
 		"invalid_rgb_values": {
 			csv:    "Name,R,G,B\nRed,300,0,0\n",
-			hasErr: false, // Should clamp values
+			hasErr: true, // Values > 255 are invalid
 		},
 		"missing_columns": {
 			csv:    "Name,R\nRed,255\n",
@@ -665,6 +665,7 @@ func TestCSVExporterFormats(t *testing.T) {
 			// Verify we can re-import what we exported
 			reader := strings.NewReader(result)
 			importer := NewImporter()
+			importer.ColorFormat = format // Use same format as export
 			imported, err := importer.Import(reader)
 			if err != nil {
 				t.Errorf("Failed to re-import exported %d format: %v", format, err)

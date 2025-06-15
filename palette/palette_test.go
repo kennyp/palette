@@ -346,7 +346,7 @@ func TestString(t *testing.T) {
 		t.Errorf("String() should contain color names")
 	}
 	
-	if !contains(str, "1 colors") {
+	if !contains(str, "1 color") {
 		t.Errorf("String() should contain color count")
 	}
 }
@@ -531,8 +531,8 @@ func TestMetadataEdgeCases(t *testing.T) {
 	if exists {
 		t.Errorf("Non-existent key should return false, but got: %v", value)
 	}
-	if value != "" {
-		t.Errorf("Non-existent key should return empty string, but got: %v", value)
+	if value != nil {
+		t.Errorf("Non-existent key should return nil, but got: %v", value)
 	}
 }
 

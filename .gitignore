@@ -1,0 +1,15 @@
+# Go coverage files
+*.out
+
+# Go test cache
+*.test
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db

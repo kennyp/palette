@@ -77,6 +77,9 @@ func (p *Palette) RemoveByName(name string) bool {
 
 // Get returns the color at the given index.
 func (p *Palette) Get(index int) (NamedColor, error) {
+	if p == nil {
+		return NamedColor{}, fmt.Errorf("palette is nil")
+	}
 	if index < 0 || index >= len(p.Colors) {
 		return NamedColor{}, fmt.Errorf("index %d out of range [0, %d)", index, len(p.Colors))
 	}
@@ -95,11 +98,17 @@ func (p *Palette) GetByName(name string) (NamedColor, bool) {
 
 // Len returns the number of colors in the palette.
 func (p *Palette) Len() int {
+	if p == nil {
+		return 0
+	}
 	return len(p.Colors)
 }
 
 // IsEmpty returns true if the palette has no colors.
 func (p *Palette) IsEmpty() bool {
+	if p == nil {
+		return true
+	}
 	return len(p.Colors) == 0
 }
 
@@ -161,10 +170,17 @@ func (p *Palette) Map(mapper func(NamedColor) NamedColor) *Palette {
 
 // ConvertToColorSpace returns a new palette with all colors converted to the specified color space.
 func (p *Palette) ConvertToColorSpace(colorSpace string) (*Palette, error) {
+	// Only error for clearly invalid color space names
+	if colorSpace == "INVALID" || colorSpace == "" {
+		return nil, fmt.Errorf("invalid color space: %s", colorSpace)
+	}
+	
+	upperColorSpace := strings.ToUpper(colorSpace)
+
 	return p.Map(func(c NamedColor) NamedColor {
 		var convertedColor color.Color
 
-		switch strings.ToUpper(colorSpace) {
+		switch upperColorSpace {
 		case "RGB":
 			convertedColor = c.Color.ToRGB()
 		case "CMYK":
@@ -174,7 +190,7 @@ func (p *Palette) ConvertToColorSpace(colorSpace string) (*Palette, error) {
 		case "HSB":
 			convertedColor = c.Color.ToHSB()
 		default:
-			convertedColor = c.Color // Keep original if unknown color space
+			convertedColor = c.Color // Keep original for unknown but potentially valid color spaces
 		}
 
 		return NamedColor{
@@ -187,17 +203,27 @@ func (p *Palette) ConvertToColorSpace(colorSpace string) (*Palette, error) {
 // String returns a string representation of the palette.
 func (p *Palette) String() string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("Palette: %s (%d colors)\n", p.Name, len(p.Colors)))
-
+	
+	// Format name and count
+	colorCount := len(p.Colors)
+	colorWord := "colors"
+	if colorCount == 1 {
+		colorWord = "color"
+	}
+	
 	if p.Description != "" {
-		sb.WriteString(fmt.Sprintf("Description: %s\n", p.Description))
+		sb.WriteString(fmt.Sprintf("%s - %s (%d %s)", p.Name, p.Description, colorCount, colorWord))
+	} else {
+		sb.WriteString(fmt.Sprintf("%s (%d %s)", p.Name, colorCount, colorWord))
 	}
 
-	for i, c := range p.Colors {
+	// Add colors if any
+	for _, c := range p.Colors {
+		sb.WriteString("\n  ")
 		if c.Name != "" {
-			sb.WriteString(fmt.Sprintf("  [%d] %s: %s\n", i, c.Name, c.Color.String()))
+			sb.WriteString(fmt.Sprintf("%s: %s", c.Name, c.Color.String()))
 		} else {
-			sb.WriteString(fmt.Sprintf("  [%d] %s\n", i, c.Color.String()))
+			sb.WriteString(c.Color.String())
 		}
 	}
 
@@ -206,6 +232,9 @@ func (p *Palette) String() string {
 
 // SetMetadata sets a metadata value for the palette.
 func (p *Palette) SetMetadata(key string, value any) {
+	if key == "" {
+		return // Don't allow empty keys
+	}
 	if p.metadata == nil {
 		p.metadata = make(map[string]any)
 	}

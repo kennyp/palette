@@ -31,8 +31,14 @@ func (i *Importer) Import(r io.Reader) (*palette.Palette, error) {
 
 	// Try to parse as our standard palette format first
 	var paletteData PaletteJSON
-	if err := json.Unmarshal(data, &paletteData); err == nil && paletteData.Name != "" {
-		return i.convertFromPaletteJSON(paletteData)
+	if err := json.Unmarshal(data, &paletteData); err == nil {
+		// Check if it has a colors field (indicating it's a palette structure)
+		var check map[string]any
+		if json.Unmarshal(data, &check) == nil {
+			if _, hasColors := check["colors"]; hasColors {
+				return i.convertFromPaletteJSON(paletteData)
+			}
+		}
 	}
 
 	// Try to parse as array of colors
@@ -173,11 +179,31 @@ func (i *Importer) convertFromGenericJSON(data map[string]any) (*palette.Palette
 		if c := i.tryParseColorValue(key, value); c != nil {
 			p.Add(c, key)
 			colorCount++
+		} else if nested, ok := value.(map[string]any); ok {
+			// Handle nested color objects
+			for nestedKey, nestedValue := range nested {
+				if c := i.tryParseColorValue(nestedKey, nestedValue); c != nil {
+					p.Add(c, fmt.Sprintf("%s.%s", key, nestedKey))
+					colorCount++
+				}
+			}
 		}
 	}
 
 	if colorCount == 0 {
-		return nil, fmt.Errorf("no recognizable color data found in JSON")
+		// If the object has nested structures (like "colors"), it's an attempt
+		// at a palette with invalid colors - return empty palette
+		hasNestedStructure := false
+		for _, value := range data {
+			if _, isMap := value.(map[string]any); isMap {
+				hasNestedStructure = true
+				break
+			}
+		}
+		
+		if !hasNestedStructure {
+			return nil, fmt.Errorf("no recognizable color data found in JSON")
+		}
 	}
 
 	return p, nil

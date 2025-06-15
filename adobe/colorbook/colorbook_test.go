@@ -88,7 +88,7 @@ func TestNewColor(t *testing.T) {
 	color := &colorbook.Color{
 		Name:       "Test Red",
 		Key:        [6]byte{'T', 'R', 0, 0, 0, 0},
-		Components: [3]byte{255, 0, 0},
+		Components: [4]byte{255, 0, 0, 0},
 	}
 	
 	if color.Name != "Test Red" {
