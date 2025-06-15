@@ -1,16 +1,18 @@
-package colorswatch
+package colorswatch_test
 
 import (
 	"testing"
+	
+	"github.com/kennyp/palette/adobe/colorswatch"
 )
 
 func TestColorSpaceString(t *testing.T) {
-	tests := map[ColorSpace]string{
-		ColorSpaceRGB:       "RGB",
-		ColorSpaceHSB:       "HSB",
-		ColorSpaceCMYK:      "CMYK",
-		ColorSpaceLab:       "Lab",
-		ColorSpaceGrayscale: "Grayscale",
+	tests := map[colorswatch.ColorSpace]string{
+		colorswatch.ColorSpaceRGB:       "RGB",
+		colorswatch.ColorSpaceHSB:       "HSB",
+		colorswatch.ColorSpaceCMYK:      "CMYK",
+		colorswatch.ColorSpaceLab:       "Lab",
+		colorswatch.ColorSpaceGrayscale: "Grayscale",
 	}
 
 	for colorSpace, expected := range tests {
@@ -21,31 +23,31 @@ func TestColorSpaceString(t *testing.T) {
 }
 
 func TestConstants(t *testing.T) {
-	if FileTypeMac != "8BCO" {
-		t.Errorf("FileTypeMac = %s, want 8BCO", FileTypeMac)
+	if colorswatch.FileTypeMac != "8BCO" {
+		t.Errorf("FileTypeMac = %s, want 8BCO", colorswatch.FileTypeMac)
 	}
 	
-	if FileTypeWindows != "ACO" {
-		t.Errorf("FileTypeWindows = %s, want ACO", FileTypeWindows)
+	if colorswatch.FileTypeWindows != "ACO" {
+		t.Errorf("FileTypeWindows = %s, want ACO", colorswatch.FileTypeWindows)
 	}
 	
-	if Version1 != 1 {
-		t.Errorf("Version1 = %d, want 1", Version1)
+	if colorswatch.Version1 != 1 {
+		t.Errorf("Version1 = %d, want 1", colorswatch.Version1)
 	}
 	
-	if Version2 != 2 {
-		t.Errorf("Version2 = %d, want 2", Version2)
+	if colorswatch.Version2 != 2 {
+		t.Errorf("Version2 = %d, want 2", colorswatch.Version2)
 	}
 }
 
 func TestNewColorSwatch(t *testing.T) {
-	cs := &ColorSwatch{
-		Version: Version1,
-		Colors:  []*Color{},
+	cs := &colorswatch.ColorSwatch{
+		Version: colorswatch.Version1,
+		Colors:  []*colorswatch.Color{},
 	}
 	
-	if cs.Version != Version1 {
-		t.Errorf("ColorSwatch Version = %d, want %d", cs.Version, Version1)
+	if cs.Version != colorswatch.Version1 {
+		t.Errorf("ColorSwatch Version = %d, want %d", cs.Version, colorswatch.Version1)
 	}
 	
 	if cs.Colors == nil {
@@ -54,14 +56,14 @@ func TestNewColorSwatch(t *testing.T) {
 }
 
 func TestNewColor(t *testing.T) {
-	color := &Color{
-		ColorSpace: ColorSpaceRGB,
+	color := &colorswatch.Color{
+		ColorSpace: colorswatch.ColorSpaceRGB,
 		Values:     [4]uint16{255, 0, 0, 0}, // RGB + alpha
 		Name:       "Test Red",
 	}
 	
-	if color.ColorSpace != ColorSpaceRGB {
-		t.Errorf("Color ColorSpace = %v, want %v", color.ColorSpace, ColorSpaceRGB)
+	if color.ColorSpace != colorswatch.ColorSpaceRGB {
+		t.Errorf("Color ColorSpace = %v, want %v", color.ColorSpace, colorswatch.ColorSpaceRGB)
 	}
 	
 	if color.Name != "Test Red" {
@@ -75,12 +77,12 @@ func TestNewColor(t *testing.T) {
 }
 
 func TestColorSpaceValidation(t *testing.T) {
-	validColorSpaces := []ColorSpace{
-		ColorSpaceRGB,
-		ColorSpaceHSB,
-		ColorSpaceCMYK,
-		ColorSpaceLab,
-		ColorSpaceGrayscale,
+	validColorSpaces := []colorswatch.ColorSpace{
+		colorswatch.ColorSpaceRGB,
+		colorswatch.ColorSpaceHSB,
+		colorswatch.ColorSpaceCMYK,
+		colorswatch.ColorSpaceLab,
+		colorswatch.ColorSpaceGrayscale,
 	}
 	
 	for _, cs := range validColorSpaces {

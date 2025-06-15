@@ -1,27 +1,29 @@
-package colorbook
+package colorbook_test
 
 import (
 	"testing"
+	
+	"github.com/kennyp/palette/adobe/colorbook"
 )
 
 func TestBookIDString(t *testing.T) {
-	tests := map[BookID]string{
-		BookIDANPA:                  "ANPA",
-		BookIDFocoltone:             "Focoltone",
-		BookIDPantoneCoated:         "PantoneCoated",
-		BookIDPantoneProcess:        "PantoneProcess",
-		BookIDPantoneProSlim:        "PantoneProSlim",
-		BookIDPantoneUncoated:       "PantoneUncoated",
-		BookIDToyo:                  "Toyo",
-		BookIDTrumatch:              "Trumatch",
-		BookIDHKSE:                  "HKSE",
-		BookIDHKSK:                  "HKSK",
-		BookIDHKSN:                  "HKSN",
-		BookIDHKSZ:                  "HKSZ",
-		BookIDDIC:                   "DIC",
-		BookIDPantonePastelCoated:   "PantonePastelCoated",
-		BookIDPantonePastelUncoated: "PantonePastelUncoated",
-		BookIDPantoneMetallic:       "PantoneMetallic",
+	tests := map[colorbook.BookID]string{
+		colorbook.BookIDANPA:                  "ANPA",
+		colorbook.BookIDFocoltone:             "Focoltone",
+		colorbook.BookIDPantoneCoated:         "PantoneCoated",
+		colorbook.BookIDPantoneProcess:        "PantoneProcess",
+		colorbook.BookIDPantoneProSlim:        "PantoneProSlim",
+		colorbook.BookIDPantoneUncoated:       "PantoneUncoated",
+		colorbook.BookIDToyo:                  "Toyo",
+		colorbook.BookIDTrumatch:              "Trumatch",
+		colorbook.BookIDHKSE:                  "HKSE",
+		colorbook.BookIDHKSK:                  "HKSK",
+		colorbook.BookIDHKSN:                  "HKSN",
+		colorbook.BookIDHKSZ:                  "HKSZ",
+		colorbook.BookIDDIC:                   "DIC",
+		colorbook.BookIDPantonePastelCoated:   "PantonePastelCoated",
+		colorbook.BookIDPantonePastelUncoated: "PantonePastelUncoated",
+		colorbook.BookIDPantoneMetallic:       "PantoneMetallic",
 	}
 
 	for bookID, expected := range tests {
@@ -32,10 +34,10 @@ func TestBookIDString(t *testing.T) {
 }
 
 func TestColorTypeString(t *testing.T) {
-	tests := map[ColorType]string{
-		ColorTypeRGB:  "RGB",
-		ColorTypeCMYK: "CMYK",
-		ColorTypeLab:  "Lab",
+	tests := map[colorbook.ColorType]string{
+		colorbook.ColorTypeRGB:  "RGB",
+		colorbook.ColorTypeCMYK: "CMYK",
+		colorbook.ColorTypeLab:  "Lab",
 	}
 
 	for colorType, expected := range tests {
@@ -46,44 +48,44 @@ func TestColorTypeString(t *testing.T) {
 }
 
 func TestConstants(t *testing.T) {
-	if FileType != "8BCB" {
-		t.Errorf("FileType = %s, want 8BCB", FileType)
+	if colorbook.FileType != "8BCB" {
+		t.Errorf("FileType = %s, want 8BCB", colorbook.FileType)
 	}
 	
-	if DefaultVersion != 1 {
-		t.Errorf("DefaultVersion = %d, want 1", DefaultVersion)
+	if colorbook.DefaultVersion != 1 {
+		t.Errorf("DefaultVersion = %d, want 1", colorbook.DefaultVersion)
 	}
 }
 
 func TestNewColorBook(t *testing.T) {
-	cb := &ColorBook{
-		ID:            BookIDPantoneCoated,
-		Version:       DefaultVersion,
-		ColorType:     ColorTypeRGB,
+	cb := &colorbook.ColorBook{
+		ID:            colorbook.BookIDPantoneCoated,
+		Version:       colorbook.DefaultVersion,
+		ColorType:     colorbook.ColorTypeRGB,
 		Title:         "Test Color Book",
 		Prefix:        "TEST",
 		Postfix:       "",
 		Description:   "A test color book",
 		ColorsPerPage: 10,
 		KeyColorPage:  1,
-		Colors:        []*Color{},
+		Colors:        []*colorbook.Color{},
 	}
 	
-	if cb.Version != DefaultVersion {
-		t.Errorf("ColorBook Version = %d, want %d", cb.Version, DefaultVersion)
+	if cb.Version != colorbook.DefaultVersion {
+		t.Errorf("ColorBook Version = %d, want %d", cb.Version, colorbook.DefaultVersion)
 	}
 	
-	if cb.ID != BookIDPantoneCoated {
-		t.Errorf("ColorBook ID = %v, want %v", cb.ID, BookIDPantoneCoated)
+	if cb.ID != colorbook.BookIDPantoneCoated {
+		t.Errorf("ColorBook ID = %v, want %v", cb.ID, colorbook.BookIDPantoneCoated)
 	}
 	
-	if cb.ColorType != ColorTypeRGB {
-		t.Errorf("ColorBook ColorType = %v, want %v", cb.ColorType, ColorTypeRGB)
+	if cb.ColorType != colorbook.ColorTypeRGB {
+		t.Errorf("ColorBook ColorType = %v, want %v", cb.ColorType, colorbook.ColorTypeRGB)
 	}
 }
 
 func TestNewColor(t *testing.T) {
-	color := &Color{
+	color := &colorbook.Color{
 		Name:       "Test Red",
 		Key:        [6]byte{'T', 'R', 0, 0, 0, 0},
 		Components: [3]byte{255, 0, 0},

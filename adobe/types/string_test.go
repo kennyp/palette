@@ -1,7 +1,9 @@
-package types
+package types_test
 
 import (
 	"testing"
+	
+	"github.com/kennyp/palette/adobe/types"
 )
 
 func TestUnicodeString(t *testing.T) {
@@ -16,7 +18,7 @@ func TestUnicodeString(t *testing.T) {
 
 	for _, original := range tests {
 		t.Run(original, func(t *testing.T) {
-			us := UnicodeString(original)
+			us := types.UnicodeString(original)
 			
 			// Test String() method
 			if us.String() != original {
@@ -44,7 +46,7 @@ func TestUnicodeString(t *testing.T) {
 
 func TestUnicodeStringBasicFunctionality(t *testing.T) {
 	// Test basic functionality
-	us := UnicodeString("Test")
+	us := types.UnicodeString("Test")
 	
 	if us.String() != "Test" {
 		t.Errorf("String() = %s, want Test", us.String())

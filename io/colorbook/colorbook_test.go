@@ -1,29 +1,30 @@
-package colorbook
+package colorbook_test
 
 import (
 	"strings"
 	"testing"
 
 	"github.com/kennyp/palette/color"
+	"github.com/kennyp/palette/io/colorbook"
 	"github.com/kennyp/palette/palette"
 )
 
 func TestNewImporter(t *testing.T) {
-	importer := NewImporter()
+	importer := colorbook.NewImporter()
 	if importer == nil {
-		t.Error("NewImporter() returned nil")
+		t.Error("colorbook.NewImporter() returned nil")
 	}
 }
 
 func TestNewExporter(t *testing.T) {
-	exporter := NewExporter()
+	exporter := colorbook.NewExporter()
 	if exporter == nil {
-		t.Error("NewExporter() returned nil")
+		t.Error("colorbook.NewExporter() returned nil")
 	}
 }
 
 func TestImporterCanImport(t *testing.T) {
-	importer := NewImporter()
+	importer := colorbook.NewImporter()
 	
 	tests := map[string]struct {
 		format   string
@@ -49,7 +50,7 @@ func TestImporterCanImport(t *testing.T) {
 }
 
 func TestExporterCanExport(t *testing.T) {
-	exporter := NewExporter()
+	exporter := colorbook.NewExporter()
 	
 	tests := map[string]struct {
 		format   string
@@ -75,8 +76,8 @@ func TestExporterCanExport(t *testing.T) {
 }
 
 func TestSupportedFormats(t *testing.T) {
-	importer := NewImporter()
-	exporter := NewExporter()
+	importer := colorbook.NewImporter()
+	exporter := colorbook.NewExporter()
 	
 	importFormats := importer.SupportedFormats()
 	exportFormats := exporter.SupportedFormats()
@@ -112,7 +113,7 @@ func TestExportBasic(t *testing.T) {
 	p.Add(color.NewRGB(0, 255, 0), "Green")
 	p.Add(color.NewRGB(0, 0, 255), "Blue")
 	
-	exporter := NewExporter()
+	exporter := colorbook.NewExporter()
 	var output strings.Builder
 	
 	err := exporter.Export(p, &output)
@@ -135,7 +136,7 @@ func TestExportEmptyPalette(t *testing.T) {
 	// Test exporting an empty palette
 	p := palette.New("Empty Palette")
 	
-	exporter := NewExporter()
+	exporter := colorbook.NewExporter()
 	var output strings.Builder
 	
 	err := exporter.Export(p, &output)
@@ -150,7 +151,7 @@ func TestExportEmptyPalette(t *testing.T) {
 }
 
 func TestImportInvalidData(t *testing.T) {
-	importer := NewImporter()
+	importer := colorbook.NewImporter()
 	
 	tests := map[string]struct {
 		data string
@@ -191,7 +192,7 @@ func TestColorConversion(t *testing.T) {
 			p := palette.New("Test")
 			p.Add(tc.color, tc.name)
 			
-			exporter := NewExporter()
+			exporter := colorbook.NewExporter()
 			var output strings.Builder
 			
 			err := exporter.Export(p, &output)

@@ -1,4 +1,4 @@
-package colorswatch
+package colorswatch_test
 
 import (
 	"fmt"
@@ -6,25 +6,26 @@ import (
 	"testing"
 
 	"github.com/kennyp/palette/color"
+	"github.com/kennyp/palette/io/colorswatch"
 	"github.com/kennyp/palette/palette"
 )
 
 func TestNewImporter(t *testing.T) {
-	importer := NewImporter()
+	importer := colorswatch.NewImporter()
 	if importer == nil {
-		t.Error("NewImporter() returned nil")
+		t.Error("colorswatch.NewImporter() returned nil")
 	}
 }
 
 func TestNewExporter(t *testing.T) {
-	exporter := NewExporter()
+	exporter := colorswatch.NewExporter()
 	if exporter == nil {
-		t.Error("NewExporter() returned nil")
+		t.Error("colorswatch.NewExporter() returned nil")
 	}
 }
 
 func TestImporterCanImport(t *testing.T) {
-	importer := NewImporter()
+	importer := colorswatch.NewImporter()
 	
 	tests := map[string]struct {
 		format   string
@@ -50,7 +51,7 @@ func TestImporterCanImport(t *testing.T) {
 }
 
 func TestExporterCanExport(t *testing.T) {
-	exporter := NewExporter()
+	exporter := colorswatch.NewExporter()
 	
 	tests := map[string]struct {
 		format   string
@@ -76,8 +77,8 @@ func TestExporterCanExport(t *testing.T) {
 }
 
 func TestSupportedFormats(t *testing.T) {
-	importer := NewImporter()
-	exporter := NewExporter()
+	importer := colorswatch.NewImporter()
+	exporter := colorswatch.NewExporter()
 	
 	importFormats := importer.SupportedFormats()
 	exportFormats := exporter.SupportedFormats()
@@ -113,7 +114,7 @@ func TestExportBasic(t *testing.T) {
 	p.Add(color.NewRGB(0, 255, 0), "Green")
 	p.Add(color.NewRGB(0, 0, 255), "Blue")
 	
-	exporter := NewExporter()
+	exporter := colorswatch.NewExporter()
 	var output strings.Builder
 	
 	err := exporter.Export(p, &output)
@@ -136,7 +137,7 @@ func TestExportEmptyPalette(t *testing.T) {
 	// Test exporting an empty palette
 	p := palette.New("Empty Palette")
 	
-	exporter := NewExporter()
+	exporter := colorswatch.NewExporter()
 	var output strings.Builder
 	
 	err := exporter.Export(p, &output)
@@ -151,7 +152,7 @@ func TestExportEmptyPalette(t *testing.T) {
 }
 
 func TestImportInvalidData(t *testing.T) {
-	importer := NewImporter()
+	importer := colorswatch.NewImporter()
 	
 	tests := map[string]struct {
 		data string
@@ -192,7 +193,7 @@ func TestColorConversion(t *testing.T) {
 			p := palette.New("Test")
 			p.Add(tc.color, tc.name)
 			
-			exporter := NewExporter()
+			exporter := colorswatch.NewExporter()
 			var output strings.Builder
 			
 			err := exporter.Export(p, &output)
@@ -219,7 +220,7 @@ func TestLargeColorCount(t *testing.T) {
 		p.Add(color.NewRGB(r, g, b), fmt.Sprintf("Color%03d", i))
 	}
 	
-	exporter := NewExporter()
+	exporter := colorswatch.NewExporter()
 	var output strings.Builder
 	
 	err := exporter.Export(p, &output)
