@@ -13,12 +13,23 @@ A Go library for working with collections of colors. It provides a unified inter
   - JSON with extensible schema
 - **Extensible Architecture**: Pluggable import/export system for easy format additions
 - **Color Space Conversion**: High-quality color space conversions with proper gamma correction and illuminant handling
+- **CLI & Web Interface**: Command-line tool and web server for easy palette conversion without writing code ([see CLI docs](cmd/palette/README.md))
 
 ## Installation
+
+### As a Library
 
 ```bash
 go get github.com/kennyp/palette
 ```
+
+### As a CLI Tool
+
+```bash
+go install github.com/kennyp/palette/cmd/palette@latest
+```
+
+See the [CLI documentation](cmd/palette/README.md) for command-line usage and web server features.
 
 ## Quick Start
 
@@ -164,6 +175,21 @@ exporter := colorswatch.NewExporterV1()
 // Export ACO version 2 (with names) - default
 exporter := colorswatch.NewExporter()
 ```
+
+## CLI Tool
+
+The Palette library includes a command-line tool for converting palette files and a web server with a user-friendly interface:
+
+```bash
+# Convert files via CLI
+palette convert -i colors.aco -o colors.json
+palette convert -i palette.acb -o palette.csv --colorspace RGB
+
+# Start web server
+palette serve --port 8080
+```
+
+The web interface provides drag-and-drop file upload, format selection, and instant conversion. See the [CLI documentation](cmd/palette/README.md) for complete usage details.
 
 ## Architecture
 

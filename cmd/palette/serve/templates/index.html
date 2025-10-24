@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Palette Converter</title>
+        <script
+            src="https://cdn.jsdelivr.net/npm/[email protected]/dist/cdn.min.js"
+            defer
+        ></script>
+        <script
+            src="https://cdn.jsdelivr.net/npm/[email protected]/dist/cdn.min.js"
+            defer
+        ></script>
+        <style>
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    "Helvetica Neue", Arial, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                padding: 2rem;
+            }
+
+            .container {
+                max-width: 800px;
+                margin: 0 auto;
+            }
+
+            .card {
+                background: white;
+                border-radius: 12px;
+                padding: 2rem;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            }
+
+            h1 {
+                font-size: 2.5rem;
+                margin-bottom: 0.5rem;
+                color: #667eea;
+                text-align: center;
+            }
+
+            .subtitle {
+                text-align: center;
+                color: #666;
+                margin-bottom: 2rem;
+                font-size: 1.1rem;
+            }
+
+            .upload-area {
+                border: 3px dashed #cbd5e0;
+                border-radius: 8px;
+                padding: 3rem 2rem;
+                text-align: center;
+                background: #f7fafc;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                margin-bottom: 2rem;
+            }
+
+            .upload-area:hover,
+            .upload-area.dragover {
+                border-color: #667eea;
+                background: #edf2f7;
+            }
+
+            .upload-icon {
+                font-size: 3rem;
+                margin-bottom: 1rem;
+            }
+
+            .upload-text {
+                font-size: 1.1rem;
+                color: #4a5568;
+                margin-bottom: 0.5rem;
+            }
+
+            .upload-hint {
+                font-size: 0.9rem;
+                color: #718096;
+            }
+
+            input[type="file"] {
+                display: none;
+            }
+
+            .file-info {
+                background: #edf2f7;
+                padding: 1rem;
+                border-radius: 6px;
+                margin-bottom: 1.5rem;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            .file-name {
+                font-weight: 600;
+                color: #2d3748;
+            }
+
+            .form-group {
+                margin-bottom: 1.5rem;
+            }
+
+            label {
+                display: block;
+                font-weight: 600;
+                margin-bottom: 0.5rem;
+                color: #2d3748;
+            }
+
+            select {
+                width: 100%;
+                padding: 0.75rem;
+                border: 2px solid #e2e8f0;
+                border-radius: 6px;
+                font-size: 1rem;
+                background: white;
+                cursor: pointer;
+                transition: border-color 0.2s;
+            }
+
+            select:focus {
+                outline: none;
+                border-color: #667eea;
+            }
+
+            .btn {
+                display: inline-block;
+                padding: 0.75rem 2rem;
+                border: none;
+                border-radius: 6px;
+                font-size: 1rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+                text-align: center;
+                width: 100%;
+            }
+
+            .btn-primary {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+            }
+
+            .btn-primary:hover:not(:disabled) {
+                transform: translateY(-2px);
+                box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            }
+
+            .btn-primary:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+
+            .btn-secondary {
+                background: #48bb78;
+                color: white;
+                margin-top: 1rem;
+            }
+
+            .btn-secondary:hover {
+                background: #38a169;
+            }
+
+            .alert {
+                padding: 1rem;
+                border-radius: 6px;
+                margin-bottom: 1.5rem;
+            }
+
+            .alert-error {
+                background: #fed7d7;
+                color: #c53030;
+                border: 1px solid #fc8181;
+            }
+
+            .alert-success {
+                background: #c6f6d5;
+                color: #2f855a;
+                border: 1px solid #9ae6b4;
+            }
+
+            .spinner {
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                border: 3px solid rgba(255, 255, 255, 0.3);
+                border-radius: 50%;
+                border-top-color: white;
+                animation: spin 1s ease-in-out infinite;
+                margin-right: 0.5rem;
+            }
+
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .hidden {
+                display: none;
+            }
+
+            [x-cloak] {
+                display: none !important;
+            }
+
+            .formats-info {
+                margin-top: 2rem;
+                padding-top: 2rem;
+                border-top: 1px solid #e2e8f0;
+            }
+
+            .formats-info h3 {
+                margin-bottom: 1rem;
+                color: #2d3748;
+            }
+
+            .format-list {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 1rem;
+            }
+
+            .format-item {
+                background: #f7fafc;
+                padding: 0.75rem;
+                border-radius: 6px;
+                text-align: center;
+            }
+
+            .format-ext {
+                font-weight: 700;
+                color: #667eea;
+                font-size: 1.1rem;
+            }
+
+            .format-desc {
+                font-size: 0.85rem;
+                color: #718096;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="card">
+                <h1>🎨 Palette Converter</h1>
+                <p class="subtitle">
+                    Convert color palettes between different formats
+                </p>
+
+                <div x-data="paletteConverter()">
+                    <!-- Upload Area -->
+                    <div
+                        class="upload-area"
+                        @click="$refs.fileInput.click()"
+                        @dragover.prevent="dragover = true"
+                        @dragleave.prevent="dragover = false"
+                        @drop.prevent="handleDrop($event)"
+                        :class="{ 'dragover': dragover }"
+                        x-show="!file"
+                    >
+                        <div class="upload-icon">📁</div>
+                        <div class="upload-text">
+                            Click to upload or drag and drop
+                        </div>
+                        <div class="upload-hint">
+                            Supports .acb, .aco, .csv, .json files
+                        </div>
+                        <input
+                            type="file"
+                            x-ref="fileInput"
+                            @change="handleFileSelect($event)"
+                            accept=".acb,.aco,.csv,.json"
+                        />
+                    </div>
+
+                    <!-- File Info -->
+                    <div x-show="file" class="file-info">
+                        <div>
+                            <span class="file-name" x-text="file?.name"></span>
+                            <span
+                                x-text="' (' + formatFileSize(file?.size) + ')'"
+                            ></span>
+                        </div>
+                        <button
+                            @click="clearFile()"
+                            style="
+                                background: none;
+                                border: none;
+                                cursor: pointer;
+                                font-size: 1.5rem;
+                            "
+                        >
+                            ❌
+                        </button>
+                    </div>
+
+                    <!-- Conversion Form -->
+                    <form
+                        x-show="file"
+                        hx-post="/api/convert"
+                        hx-encoding="multipart/form-data"
+                        hx-indicator="#loading"
+                        hx-swap="none"
+                        @htmx:before-request="converting = true"
+                        @htmx:after-request="handleResponse($event)"
+                    >
+                        <div class="form-group">
+                            <label for="to">Convert to format:</label>
+                            <select
+                                name="to"
+                                id="to"
+                                x-model="targetFormat"
+                                required
+                            >
+                                <option value="">Select format...</option>
+                                <option value=".acb">
+                                    Adobe Color Book (.acb)
+                                </option>
+                                <option value=".aco">
+                                    Adobe Color Swatch (.aco)
+                                </option>
+                                <option value=".csv">CSV (.csv)</option>
+                                <option value=".json">JSON (.json)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="colorspace"
+                                >Color space (optional):</label
+                            >
+                            <select
+                                name="colorspace"
+                                id="colorspace"
+                                x-model="colorSpace"
+                            >
+                                <option value="">Keep original</option>
+                                <option value="RGB">RGB</option>
+                                <option value="CMYK">CMYK</option>
+                                <option value="LAB">LAB</option>
+                                <option value="HSB">HSB</option>
+                            </select>
+                        </div>
+
+                        <input
+                            type="file"
+                            name="file"
+                            x-ref="hiddenFileInput"
+                            style="display: none"
+                        />
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary"
+                            :disabled="!targetFormat || converting"
+                            @click.prevent="submitForm()"
+                        >
+                            <span id="loading" class="hidden">
+                                <span class="spinner"></span>
+                            </span>
+                            <span x-show="!converting">Convert Palette</span>
+                            <span x-show="converting">Converting...</span>
+                        </button>
+                    </form>
+
+                    <!-- Error Message -->
+                    <div x-show="error" x-cloak class="alert alert-error" x-text="error"></div>
+
+                    <!-- Success Message -->
+                    <div x-show="success" x-cloak class="alert alert-success" x-text="success"></div>
+
+                    <!-- Success Message -->
+                    <div
+                        x-show="success"
+                        x-cloak
+                        class="alert alert-success"
+                        x-text="success"
+                    ></div>
+
+                    <!-- Supported Formats Info -->
+                    <div class="formats-info">
+                        <h3>Supported Formats</h3>
+                        <div class="format-list">
+                            <div class="format-item">
+                                <div class="format-ext">.acb</div>
+                                <div class="format-desc">Adobe Color Book</div>
+                            </div>
+                            <div class="format-item">
+                                <div class="format-ext">.aco</div>
+                                <div class="format-desc">
+                                    Adobe Color Swatch
+                                </div>
+                            </div>
+                            <div class="format-item">
+                                <div class="format-ext">.csv</div>
+                                <div class="format-desc">CSV</div>
+                            </div>
+                            <div class="format-item">
+                                <div class="format-ext">.json</div>
+                                <div class="format-desc">JSON</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function paletteConverter() {
+                return {
+                    file: null,
+                    targetFormat: "",
+                    colorSpace: "",
+                    dragover: false,
+                    converting: false,
+                    error: "",
+                    success: "",
+
+                    handleFileSelect(event) {
+                        this.file = event.target.files[0];
+                        this.error = "";
+                        this.success = "";
+                    },
+
+                    handleDrop(event) {
+                        this.dragover = false;
+                        const files = event.dataTransfer.files;
+                        if (files.length > 0) {
+                            this.file = files[0];
+                            this.error = "";
+                            this.success = "";
+                        }
+                    },
+
+                    clearFile() {
+                        this.file = null;
+                        this.targetFormat = "";
+                        this.colorSpace = "";
+                        this.error = "";
+                        this.success = "";
+                        this.$refs.fileInput.value = "";
+                    },
+
+                    formatFileSize(bytes) {
+                        if (!bytes) return "0 Bytes";
+                        const k = 1024;
+                        const sizes = ["Bytes", "KB", "MB"];
+                        const i = Math.floor(Math.log(bytes) / Math.log(k));
+                        return (
+                            Math.round((bytes / Math.pow(k, i)) * 100) / 100 +
+                            " " +
+                            sizes[i]
+                        );
+                    },
+
+                    submitForm() {
+                        if (!this.file || !this.targetFormat) {
+                            this.error =
+                                "Please select a file and target format";
+                            return;
+                        }
+
+                        // Create FormData and append file
+                        const formData = new FormData();
+                        formData.append("file", this.file);
+                        formData.append("to", this.targetFormat);
+                        if (this.colorSpace) {
+                            formData.append("colorspace", this.colorSpace);
+                        }
+
+                        this.error = "";
+                        this.success = "";
+                        this.converting = true;
+
+                        // Make the request
+                        fetch("/api/convert", {
+                            method: "POST",
+                            body: formData,
+                        })
+                            .then((response) => {
+                                if (!response.ok) {
+                                    return response.text().then((text) => {
+                                        throw new Error(
+                                            text || "Conversion failed",
+                                        );
+                                    });
+                                }
+
+                                // Get filename from Content-Disposition header
+                                const disposition = response.headers.get(
+                                    "Content-Disposition",
+                                );
+                                let filename = "converted" + this.targetFormat;
+                                if (disposition) {
+                                    const matches =
+                                        /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(
+                                            disposition,
+                                        );
+                                    if (matches != null && matches[1]) {
+                                        filename = matches[1].replace(
+                                            /['"]/g,
+                                            "",
+                                        );
+                                    }
+                                }
+
+                                return response
+                                    .blob()
+                                    .then((blob) => ({ blob, filename }));
+                            })
+                            .then(({ blob, filename }) => {
+                                // Create download link
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = filename;
+                                document.body.appendChild(a);
+                                a.click();
+                                window.URL.revokeObjectURL(url);
+                                document.body.removeChild(a);
+
+                                this.success =
+                                    "Conversion successful! File downloaded.";
+                                this.converting = false;
+                            })
+                            .catch((error) => {
+                                this.error = "Error: " + error.message;
+                                this.converting = false;
+                            });
+                    },
+
+                    handleResponse(event) {
+                        this.converting = false;
+                    },
+                };
+            }
+        </script>
+    </body>
+</html>
