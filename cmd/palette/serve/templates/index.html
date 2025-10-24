@@ -252,17 +252,60 @@
                 margin-bottom: 0.5rem;
             }
 
-            .example-link {
+            .example-dropdown {
+                position: relative;
+                margin-top: 0.5rem;
+            }
+
+            .example-btn {
                 font-size: 0.75rem;
                 color: #667eea;
-                text-decoration: none;
+                background: none;
+                border: none;
                 font-weight: 600;
-                display: inline-block;
+                cursor: pointer;
+                padding: 0.25rem 0.5rem;
+                border-radius: 4px;
+                transition: background-color 0.2s;
+            }
+
+            .example-btn:hover {
+                background-color: #edf2f7;
+            }
+
+            .dropdown-menu {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                background: white;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                z-index: 10;
+                min-width: 150px;
                 margin-top: 0.25rem;
             }
 
-            .example-link:hover {
-                text-decoration: underline;
+            .dropdown-item {
+                display: block;
+                padding: 0.5rem 0.75rem;
+                color: #2d3748;
+                text-decoration: none;
+                font-size: 0.85rem;
+                transition: background-color 0.2s;
+            }
+
+            .dropdown-item:hover {
+                background-color: #edf2f7;
+                color: #667eea;
+            }
+
+            .dropdown-item:first-child {
+                border-radius: 6px 6px 0 0;
+            }
+
+            .dropdown-item:last-child {
+                border-radius: 0 0 6px 6px;
             }
         </style>
     </head>
@@ -419,23 +462,84 @@
                                     Adobe Color Swatch
                                 </div>
                             </div>
-                            <div class="format-item">
+                            <div
+                                class="format-item"
+                                x-data="{ showMenu: false }"
+                            >
                                 <div class="format-ext">.csv</div>
                                 <div class="format-desc">CSV</div>
-                                <a
-                                    href="/api/examples?format=csv"
-                                    class="example-link"
-                                    >Download Example</a
-                                >
+                                <div class="example-dropdown">
+                                    <button
+                                        @click="showMenu = !showMenu"
+                                        @click.away="showMenu = false"
+                                        class="example-btn"
+                                    >
+                                        Download Example ▾
+                                    </button>
+                                    <div
+                                        x-show="showMenu"
+                                        x-cloak
+                                        class="dropdown-menu"
+                                    >
+                                        <a
+                                            href="/api/examples?format=csv&colorspace=rgb"
+                                            class="dropdown-item"
+                                            >RGB Example</a
+                                        >
+                                        <a
+                                            href="/api/examples?format=csv&colorspace=cmyk"
+                                            class="dropdown-item"
+                                            >CMYK Example</a
+                                        >
+                                        <a
+                                            href="/api/examples?format=csv&colorspace=hsb"
+                                            class="dropdown-item"
+                                            >HSB Example</a
+                                        >
+                                        <a
+                                            href="/api/examples?format=csv&colorspace=lab"
+                                            class="dropdown-item"
+                                            >LAB Example</a
+                                        >
+                                    </div>
+                                </div>
                             </div>
-                            <div class="format-item">
+                            <div
+                                class="format-item"
+                                x-data="{ showMenu: false }"
+                            >
                                 <div class="format-ext">.json</div>
                                 <div class="format-desc">JSON</div>
-                                <a
-                                    href="/api/examples?format=json"
-                                    class="example-link"
-                                    >Download Example</a
-                                >
+                                <div class="example-dropdown">
+                                    <button
+                                        @click="showMenu = !showMenu"
+                                        @click.away="showMenu = false"
+                                        class="example-btn"
+                                    >
+                                        Download Example ▾
+                                    </button>
+                                    <div
+                                        x-show="showMenu"
+                                        x-cloak
+                                        class="dropdown-menu"
+                                    >
+                                        <a
+                                            href="/api/examples?format=json&colorspace=rgb"
+                                            class="dropdown-item"
+                                            >RGB Example</a
+                                        >
+                                        <a
+                                            href="/api/examples?format=json&colorspace=cmyk"
+                                            class="dropdown-item"
+                                            >CMYK Example</a
+                                        >
+                                        <a
+                                            href="/api/examples?format=json&colorspace=lab"
+                                            class="dropdown-item"
+                                            >LAB Example</a
+                                        >
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

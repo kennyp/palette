@@ -1,0 +1,26 @@
+{
+  "name": "CMYK Example Palette",
+  "description": "Sample colors in CMYK color space",
+  "colors": [
+    {
+      "name": "Cyan",
+      "color_space": "CMYK",
+      "cmyk": {"c": 100, "m": 0, "y": 0, "k": 0}
+    },
+    {
+      "name": "Magenta",
+      "color_space": "CMYK",
+      "cmyk": {"c": 0, "m": 100, "y": 0, "k": 0}
+    },
+    {
+      "name": "Yellow",
+      "color_space": "CMYK",
+      "cmyk": {"c": 0, "m": 0, "y": 100, "k": 0}
+    },
+    {
+      "name": "Black",
+      "color_space": "CMYK",
+      "cmyk": {"c": 0, "m": 0, "y": 0, "k": 100}
+    }
+  ]
+}

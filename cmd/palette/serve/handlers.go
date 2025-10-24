@@ -9,9 +9,29 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ajg/form"
 	"github.com/go-chi/render"
 	"github.com/kennyp/palette/cmd/palette/shared"
 )
+
+func init() {
+	// Extend render.Decode to support multipart/form-data
+	originalDecode := render.Decode
+	render.Decode = func(r *http.Request, v interface{}) error {
+		contentType := r.Header.Get("Content-Type")
+		if strings.HasPrefix(contentType, "multipart/form-data") {
+			// Parse multipart form
+			if err := r.ParseMultipartForm(32 << 20); err != nil {
+				return err
+			}
+			// Decode form values into the struct using ajg/form
+			decoder := form.NewDecoder(nil)
+			return decoder.DecodeValues(v, r.Form)
+		}
+		// Fall back to original decoder for other content types
+		return originalDecode(r, v)
+	}
+}
 
 //go:embed templates/index.html
 var indexHTML string
@@ -41,22 +61,30 @@ type ConvertFormRequest struct {
 	ColorSpace string `form:"colorspace"`
 }
 
+// Bind implements render.Binder for multipart form requests.
+func (c *ConvertFormRequest) Bind(r *http.Request) error {
+	if c.To == "" {
+		return fmt.Errorf("to format is required")
+	}
+	if c.ColorSpace != "" {
+		if err := shared.ValidateColorSpace(c.ColorSpace); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // handleConvert handles file upload and conversion using chi render.
 func handleConvert(w http.ResponseWriter, r *http.Request) {
-	// Parse multipart form (32 MB max)
-	if err := r.ParseMultipartForm(32 << 20); err != nil {
+	// Bind and validate form data using render.Bind (now supports multipart)
+	data := &ConvertFormRequest{}
+	if err := render.Bind(r, data); err != nil {
 		render.Render(w, r, &ErrResponse{
 			HTTPStatusCode: http.StatusBadRequest,
 			StatusText:     "Invalid request",
-			ErrorText:      fmt.Sprintf("Failed to parse form: %v", err),
+			ErrorText:      err.Error(),
 		})
 		return
-	}
-
-	// Get form values
-	data := &ConvertFormRequest{
-		To:         r.FormValue("to"),
-		ColorSpace: r.FormValue("colorspace"),
 	}
 
 	// Get uploaded file
@@ -70,28 +98,6 @@ func handleConvert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer file.Close()
-
-	// Validate color space
-	if data.ColorSpace != "" {
-		if err := shared.ValidateColorSpace(data.ColorSpace); err != nil {
-			render.Render(w, r, &ErrResponse{
-				HTTPStatusCode: http.StatusBadRequest,
-				StatusText:     "Invalid request",
-				ErrorText:      fmt.Sprintf("Invalid color space: %v", err),
-			})
-			return
-		}
-	}
-
-	// Validate target format
-	if data.To == "" {
-		render.Render(w, r, &ErrResponse{
-			HTTPStatusCode: http.StatusBadRequest,
-			StatusText:     "Invalid request",
-			ErrorText:      "Target format is required",
-		})
-		return
-	}
 
 	// Detect source format from filename
 	fromFormat := filepath.Ext(header.Filename)
@@ -348,9 +354,26 @@ var exampleJSON string
 //go:embed examples/example.csv
 var exampleCSV string
 
+//go:embed examples/example-cmyk.json
+var exampleCMYKJSON string
+
+//go:embed examples/example-cmyk.csv
+var exampleCMYKCSV string
+
+//go:embed examples/example-hsb.csv
+var exampleHSBCSV string
+
+//go:embed examples/example-lab.json
+var exampleLABJSON string
+
+//go:embed examples/example-lab.csv
+var exampleLABCSV string
+
 // handleExamples serves example palette files.
 func handleExamples(w http.ResponseWriter, r *http.Request) {
 	format := r.URL.Query().Get("format")
+	colorspace := r.URL.Query().Get("colorspace")
+
 	if format == "" {
 		render.Render(w, r, &ErrResponse{
 			HTTPStatusCode: http.StatusBadRequest,
@@ -360,24 +383,51 @@ func handleExamples(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Default to RGB if no colorspace specified
+	if colorspace == "" {
+		colorspace = "rgb"
+	}
+
 	var content string
 	var contentType string
 	var filename string
 
-	switch format {
-	case "json":
+	// Map format + colorspace to example file
+	key := format + "-" + colorspace
+	switch key {
+	case "json-rgb":
 		content = exampleJSON
 		contentType = "application/json"
-		filename = "example.json"
-	case "csv":
+		filename = "example-rgb.json"
+	case "json-cmyk":
+		content = exampleCMYKJSON
+		contentType = "application/json"
+		filename = "example-cmyk.json"
+	case "json-lab":
+		content = exampleLABJSON
+		contentType = "application/json"
+		filename = "example-lab.json"
+	case "csv-rgb":
 		content = exampleCSV
 		contentType = "text/csv"
-		filename = "example.csv"
+		filename = "example-rgb.csv"
+	case "csv-cmyk":
+		content = exampleCMYKCSV
+		contentType = "text/csv"
+		filename = "example-cmyk.csv"
+	case "csv-hsb":
+		content = exampleHSBCSV
+		contentType = "text/csv"
+		filename = "example-hsb.csv"
+	case "csv-lab":
+		content = exampleLABCSV
+		contentType = "text/csv"
+		filename = "example-lab.csv"
 	default:
 		render.Render(w, r, &ErrResponse{
 			HTTPStatusCode: http.StatusBadRequest,
 			StatusText:     "Invalid request",
-			ErrorText:      "Unsupported format. Available: json, csv",
+			ErrorText:      fmt.Sprintf("Unsupported combination: format=%s, colorspace=%s", format, colorspace),
 		})
 		return
 	}

@@ -1,0 +1,31 @@
+{
+  "name": "LAB Example Palette",
+  "description": "Sample colors in LAB color space",
+  "colors": [
+    {
+      "name": "White",
+      "color_space": "LAB",
+      "lab": {"l": 100, "a": 0, "b": 0}
+    },
+    {
+      "name": "Black",
+      "color_space": "LAB",
+      "lab": {"l": 0, "a": 0, "b": 0}
+    },
+    {
+      "name": "Red",
+      "color_space": "LAB",
+      "lab": {"l": 53, "a": 80, "b": 67}
+    },
+    {
+      "name": "Green",
+      "color_space": "LAB",
+      "lab": {"l": 88, "a": -86, "b": 83}
+    },
+    {
+      "name": "Blue",
+      "color_space": "LAB",
+      "lab": {"l": 32, "a": 79, "b": -108}
+    }
+  ]
+}
