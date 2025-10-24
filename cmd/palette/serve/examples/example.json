@@ -1,0 +1,50 @@
+{
+  "name": "Example Palette",
+  "description": "A sample color palette demonstrating the JSON format",
+  "colors": [
+    {
+      "name": "Primary Blue",
+      "color_space": "RGB",
+      "rgb": {
+        "r": 0,
+        "g": 123,
+        "b": 255
+      },
+      "hex": "#007BFF"
+    },
+    {
+      "name": "Success Green",
+      "color_space": "RGB",
+      "rgb": {
+        "r": 40,
+        "g": 167,
+        "b": 69
+      },
+      "hex": "#28A745"
+    },
+    {
+      "name": "Warning Yellow",
+      "color_space": "RGB",
+      "rgb": {
+        "r": 255,
+        "g": 193,
+        "b": 7
+      },
+      "hex": "#FFC107"
+    },
+    {
+      "name": "Danger Red",
+      "color_space": "RGB",
+      "rgb": {
+        "r": 220,
+        "g": 53,
+        "b": 69
+      },
+      "hex": "#DC3545"
+    }
+  ],
+  "metadata": {
+    "version": 1,
+    "created": "2025-01-01"
+  }
+}

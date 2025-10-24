@@ -82,9 +82,15 @@ func run(ctx context.Context, cmd *cli.Command) error {
 
 	// Define routes
 	r.Get("/", handleIndex)
-	r.Post("/api/convert", handleConvert)
-	r.Get("/api/formats", handleFormats)
 	r.Get("/health", handleHealth)
+
+	// API routes
+	r.Route("/api", func(r chi.Router) {
+		r.Post("/convert", handleConvert)        // Multipart form upload
+		r.Post("/v1/convert", handleConvertJSON) // JSON API
+		r.Get("/formats", handleFormats)
+		r.Get("/examples", handleExamples)
+	})
 
 	// Create HTTP server
 	server := &http.Server{

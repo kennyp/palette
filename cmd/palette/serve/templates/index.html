@@ -249,6 +249,20 @@
             .format-desc {
                 font-size: 0.85rem;
                 color: #718096;
+                margin-bottom: 0.5rem;
+            }
+
+            .example-link {
+                font-size: 0.75rem;
+                color: #667eea;
+                text-decoration: none;
+                font-weight: 600;
+                display: inline-block;
+                margin-top: 0.25rem;
+            }
+
+            .example-link:hover {
+                text-decoration: underline;
             }
         </style>
     </head>
@@ -408,10 +422,20 @@
                             <div class="format-item">
                                 <div class="format-ext">.csv</div>
                                 <div class="format-desc">CSV</div>
+                                <a
+                                    href="/api/examples?format=csv"
+                                    class="example-link"
+                                    >Download Example</a
+                                >
                             </div>
                             <div class="format-item">
                                 <div class="format-ext">.json</div>
                                 <div class="format-desc">JSON</div>
+                                <a
+                                    href="/api/examples?format=json"
+                                    class="example-link"
+                                    >Download Example</a
+                                >
                             </div>
                         </div>
                     </div>
