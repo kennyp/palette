@@ -69,19 +69,29 @@ palette serve --host 0.0.0.0 --port 8080
 - Support for all palette formats
 
 **API Endpoints:**
-- `GET /` - Web UI
-- `POST /api/convert` - File conversion endpoint
+- `GET /` - Web UI with drag-and-drop file upload
+- `POST /api/convert` - Multipart form file upload
+- `POST /api/v1/convert` - JSON API with base64-encoded content
 - `GET /api/formats` - List supported formats
+- `GET /api/examples?format={csv|json}&colorspace={rgb|cmyk|hsb|lab}` - Download example files
 - `GET /health` - Health check
 
 ## Supported Formats
 
-| Format | Extension | Description |
-|--------|-----------|-------------|
-| Adobe Color Book | `.acb` | Adobe's proprietary color book format |
-| Adobe Color Swatch | `.aco` | Adobe color swatch files (v1 & v2) |
-| CSV | `.csv` | Comma-separated values with color data |
-| JSON | `.json` | JSON format with flexible schema |
+| Format | Extension | Description | Color Spaces |
+|--------|-----------|-------------|--------------|
+| Adobe Color Book | `.acb` | Adobe's proprietary color book format | RGB, CMYK, LAB |
+| Adobe Color Swatch | `.aco` | Adobe color swatch files (v1 & v2) | RGB, CMYK, LAB, HSB |
+| CSV | `.csv` | Comma-separated values with color data | RGB, CMYK, LAB, HSB |
+| JSON | `.json` | JSON format with flexible schema | RGB, CMYK, LAB, HSB |
+
+**Supported Color Spaces:**
+- **RGB** - Red, Green, Blue (0-255)
+- **CMYK** - Cyan, Magenta, Yellow, Black (0-100%)
+- **LAB** - Perceptually uniform (L: 0-100, A/B: -128 to 127)
+- **HSB** - Hue, Saturation, Brightness (H: 0-360°, S/B: 0-100%)
+
+Example files are available for download via the web UI or API for each color space to help understand the format.
 
 ## Examples
 
@@ -100,8 +110,9 @@ palette convert -i my-palette.json -o output.acb
 
 ### API Examples
 
+**Multipart Form Upload:**
 ```bash
-# Convert via API
+# Convert via multipart form
 curl -F "file=@colors.aco" \
      -F "to=.json" \
      http://localhost:8080/api/convert \
@@ -113,9 +124,29 @@ curl -F "file=@palette.acb" \
      -F "colorspace=RGB" \
      http://localhost:8080/api/convert \
      -o output.csv
+```
 
+**JSON API:**
+```bash
+# Convert using JSON API (file_content is base64-encoded)
+curl -X POST http://localhost:8080/api/v1/convert \
+     -H "Content-Type: application/json" \
+     -d '{
+       "file_content": "TmFtZSxSLEcsQgpSZWQsMjU1LDAsMApHcmVlbiwwLDI1NSwwCkJsdWUsMCwwLDI1NQ==",
+       "from": ".csv",
+       "to": ".json",
+       "colorspace": "RGB"
+     }' | jq .
+```
+
+**Other Endpoints:**
+```bash
 # Get supported formats
 curl http://localhost:8080/api/formats
+
+# Download example files
+curl "http://localhost:8080/api/examples?format=csv&colorspace=cmyk" -o example-cmyk.csv
+curl "http://localhost:8080/api/examples?format=json&colorspace=lab" -o example-lab.json
 ```
 
 ## Environment Variables

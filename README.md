@@ -189,7 +189,20 @@ palette convert -i palette.acb -o palette.csv --colorspace RGB
 palette serve --port 8080
 ```
 
-The web interface provides drag-and-drop file upload, format selection, and instant conversion. See the [CLI documentation](cmd/palette/README.md) for complete usage details.
+**Web Interface Features:**
+- Drag-and-drop file upload with live preview
+- Format selection with auto-detection
+- Optional color space conversion (RGB, CMYK, LAB, HSB)
+- Download example files for each format and color space
+- Instant file conversion and download
+
+**API Features:**
+- REST API with multipart form upload (`/api/convert`)
+- JSON API with base64 encoding (`/api/v1/convert`)
+- Example file downloads for all supported color spaces
+- Built with chi router and chi render for clean, idiomatic Go
+
+See the [CLI documentation](cmd/palette/README.md) for complete usage details, API examples, and color space information.
 
 ## Architecture
 
