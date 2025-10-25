@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -17,7 +18,7 @@ import (
 func init() {
 	// Extend render.Decode to support multipart/form-data
 	originalDecode := render.Decode
-	render.Decode = func(r *http.Request, v interface{}) error {
+	render.Decode = func(r *http.Request, v any) error {
 		contentType := r.Header.Get("Content-Type")
 		if strings.HasPrefix(contentType, "multipart/form-data") {
 			// Parse multipart form
@@ -50,6 +51,7 @@ func (e *ErrResponse) Render(w http.ResponseWriter, r *http.Request) error {
 
 // handleIndex serves the main HTML page with HTMX and Alpine.js.
 func handleIndex(w http.ResponseWriter, r *http.Request) {
+	slog.InfoContext(r.Context(), "index", slog.Any("headers", r.Header))
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(indexHTML))
