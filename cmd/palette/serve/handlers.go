@@ -1,14 +1,14 @@
 package serve
 
 import (
-	_ "embed"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+
+	_ "embed"
 
 	"github.com/ajg/form"
 	"github.com/go-chi/render"
@@ -51,7 +51,6 @@ func (e *ErrResponse) Render(w http.ResponseWriter, r *http.Request) error {
 
 // handleIndex serves the main HTML page with HTMX and Alpine.js.
 func handleIndex(w http.ResponseWriter, r *http.Request) {
-	slog.InfoContext(r.Context(), "index", slog.Any("headers", r.Header))
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(indexHTML))

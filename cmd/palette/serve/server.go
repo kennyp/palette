@@ -74,7 +74,7 @@ Examples:
 func run(ctx context.Context, cmd *cli.Command) error {
 	// Initialize gops agent for debugging
 	if err := agent.Listen(agent.Options{}); err != nil {
-		slog.Warn("failed to start gops agent", "error", err)
+		slog.WarnContext(ctx, "failed to start gops agent", "error", err)
 	}
 	defer agent.Close()
 
@@ -92,13 +92,12 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	r.Use(middleware.RealIP)
 
 	logSchema := httplog.SchemaECS.Concise(host == "localhost" && ngrokURL == "")
+	logHeaders := []string{"Content-Type", "Origin", "X-Auth-Email", "X-Auth-Name"}
 	r.Use(httplog.RequestLogger(slog.Default(), &httplog.Options{
-		Level:  slog.LevelInfo,
-		Schema: logSchema,
-		LogRequestHeaders: []string{
-			"Ngrok-Auth-User-Email",
-			"Ngrok-Auth-User-Name",
-		},
+		Level:              slog.LevelInfo,
+		Schema:             logSchema,
+		LogRequestHeaders:  logHeaders,
+		LogResponseHeaders: logHeaders,
 	}))
 
 	r.Use(middleware.Recoverer)
