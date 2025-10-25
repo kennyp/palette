@@ -37,6 +37,9 @@ func init() {
 //go:embed templates/index.html
 var indexHTML string
 
+//go:embed templates/favicon.svg
+var faviconSVG []byte
+
 // ErrResponse represents an error response.
 type ErrResponse struct {
 	HTTPStatusCode int    `json:"-"`
@@ -54,6 +57,14 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(indexHTML))
+}
+
+// handleFavicon serves the favicon.
+func handleFavicon(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "image/svg+xml")
+	w.Header().Set("Cache-Control", "public, max-age=31536000")
+	w.WriteHeader(http.StatusOK)
+	w.Write(faviconSVG)
 }
 
 // ConvertFormRequest represents a multipart form conversion request.
