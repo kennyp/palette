@@ -92,7 +92,7 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	r.Use(middleware.RealIP)
 
 	logSchema := httplog.SchemaECS.Concise(host == "localhost" && ngrokURL == "")
-	logHeaders := []string{"Content-Type", "Origin", "X-Auth-Email", "X-Auth-Name"}
+	logHeaders := []string{"x-auth-email", "x-auth-name"}
 	r.Use(httplog.RequestLogger(slog.Default(), &httplog.Options{
 		Level:              slog.LevelInfo,
 		Schema:             logSchema,
