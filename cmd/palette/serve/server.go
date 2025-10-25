@@ -120,6 +120,7 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	// Define routes
 	r.Get("/", handleIndex)
 	r.Get("/favicon.ico", handleFavicon)
+	r.Get("/favicon.svg", handleFavicon)
 	r.Get("/health", handleHealth)
 
 	// API routes
