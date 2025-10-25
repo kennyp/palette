@@ -22,6 +22,13 @@ on_http_request:
         config:
           auth_id: oauth
           provider: google
+  - name: Add Headers
+    actions:
+      - type: "add-headers"
+        config:
+          headers:
+            x-auth-email: "${actions.ngrok.oauth.identity.email}"
+            x-auth-name: "${actions.ngrok.oauth.identity.name}"
 # - name: bad email
 #   expressions:
 #     - actions.ngrok.oauth.identity.email != 'k.parnell@gmail.com'
