@@ -1,0 +1,32 @@
+on_http_request:
+  - name: Add `robots.txt` to deny specific bots and crawlers
+    expressions:
+      - req.url.contains('/robots.txt')
+    actions:
+      - type: custom-response
+        config:
+          status_code: 200
+          body: "User-agent: ChatGPT-User\r\nDisallow: /"
+          headers:
+            content-type: text/plain
+  - name: Block specific bots by user agent
+    expressions:
+      - req.user_agent.name in ('ChatGPT-User', 'GPTBot', 'OAI-SearchBot')
+    actions:
+      - type: deny
+        config:
+          status_code: 404
+  - name: OAuth
+    actions:
+      - type: oauth
+        config:
+          auth_id: oauth
+          provider: google
+# - name: bad email
+#   expressions:
+#     - actions.ngrok.oauth.identity.email != 'k.parnell@gmail.com'
+#   actions:
+#     - type: custom-response
+#       config:
+#         body: "Access denied: ${actions.ngrok.oauth.identity.name}!"
+#         status_code: 403

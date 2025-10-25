@@ -12,8 +12,11 @@ import (
 	"syscall"
 	"time"
 
+	_ "embed"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httplog/v3"
 	"github.com/google/gops/agent"
 	"github.com/urfave/cli/v3"
 	"golang.ngrok.com/ngrok/v2"
@@ -87,7 +90,17 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	// Add middleware
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
+
+	logSchema := httplog.SchemaECS.Concise(host == "localhost" && ngrokURL == "")
+	r.Use(httplog.RequestLogger(slog.Default(), &httplog.Options{
+		Level:  slog.LevelInfo,
+		Schema: logSchema,
+		LogRequestHeaders: []string{
+			"Ngrok-Auth-User-Email",
+			"Ngrok-Auth-User-Name",
+		},
+	}))
+
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(30 * time.Second))
 
@@ -134,7 +147,7 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	return runLocalServer(ctx, cmd, r, addr, serverErrors, shutdown)
 }
 
-func runLocalServer(ctx context.Context, cmd *cli.Command, handler http.Handler, addr string, serverErrors chan error, shutdown chan os.Signal) error {
+func runLocalServer(_ context.Context, cmd *cli.Command, handler http.Handler, addr string, serverErrors chan error, shutdown chan os.Signal) error {
 	// Create HTTP server
 	server := &http.Server{
 		Addr:    addr,
@@ -172,6 +185,9 @@ func runLocalServer(ctx context.Context, cmd *cli.Command, handler http.Handler,
 	return nil
 }
 
+//go:embed policy.yaml
+var trafficPolicy string
+
 func runWithNgrok(ctx context.Context, cmd *cli.Command, handler http.Handler, ngrokURL string, ngrokToken string, serverErrors chan error, shutdown chan os.Signal) error {
 	if !strings.HasPrefix(ngrokURL, "http") {
 		ngrokURL = "https://" + ngrokURL
@@ -200,6 +216,7 @@ func runWithNgrok(ctx context.Context, cmd *cli.Command, handler http.Handler, n
 	// Create listener with the specified URL
 	listener, err := agent.Listen(ctx,
 		ngrok.WithURL(ngrokURL),
+		ngrok.WithTrafficPolicy(trafficPolicy),
 		ngrok.WithDescription("palette web server"),
 	)
 	if err != nil {

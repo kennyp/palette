@@ -13,6 +13,7 @@ require (
 )
 
 require (
+	github.com/go-chi/httplog/v3 v3.3.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/google/gops v0.3.28 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
