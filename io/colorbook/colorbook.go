@@ -2,7 +2,10 @@ package colorbook
 
 import (
 	"fmt"
+	"hash/fnv"
 	"io"
+	"math"
+	"strings"
 
 	"github.com/kennyp/palette/adobe/colorbook"
 	"github.com/kennyp/palette/color"
@@ -87,11 +90,14 @@ func (e *Exporter) Export(p *palette.Palette, w io.Writer) error {
 		Version:     colorbook.DefaultVersion,
 	}
 
-	// Set metadata if available
+	// Set BookID from metadata or generate one
 	if bookID, ok := p.GetMetadata("book_id"); ok {
 		if id, ok := bookID.(colorbook.BookID); ok {
 			acb.ID = id
 		}
+	} else {
+		// Generate a unique BookID for user-created palettes
+		acb.ID = generateBookID(p)
 	}
 
 	if version, ok := p.GetMetadata("version"); ok {
@@ -141,7 +147,7 @@ func (e *Exporter) Export(p *palette.Palette, w io.Writer) error {
 			return fmt.Errorf("failed to get color at index %d: %w", i, err)
 		}
 
-		adobeColor, err := convertToAdobeColor(namedColor.Color, namedColor.Name, acb.ColorType)
+		adobeColor, err := convertToAdobeColor(namedColor.Color, namedColor.Name, i, acb.ColorType)
 		if err != nil {
 			return fmt.Errorf("failed to convert color %s: %w", namedColor.Name, err)
 		}
@@ -183,18 +189,18 @@ func convertAdobeColor(c *colorbook.Color, colorType colorbook.ColorType) (color
 		return color.NewRGB(c.Components[0], c.Components[1], c.Components[2]), nil
 
 	case colorbook.ColorTypeCMYK:
-		// Adobe CMYK uses 0-255 values, convert to 0-100 percentages
-		cy := uint8((float64(c.Components[0]) / 255.0) * 100)
-		mg := uint8((float64(c.Components[1]) / 255.0) * 100)
-		ye := uint8((float64(c.Components[2]) / 255.0) * 100)
-		k := uint8((float64(c.Components[3]) / 255.0) * 100)
+		// Adobe CMYK: 0=100%, 255=0% (inverted from percentage)
+		cy := uint8(math.Round((255 - float64(c.Components[0])) / 255.0 * 100))
+		mg := uint8(math.Round((255 - float64(c.Components[1])) / 255.0 * 100))
+		ye := uint8(math.Round((255 - float64(c.Components[2])) / 255.0 * 100))
+		k := uint8(math.Round((255 - float64(c.Components[3])) / 255.0 * 100))
 		return color.NewCMYK(cy, mg, ye, k), nil
 
 	case colorbook.ColorTypeLab:
-		// Adobe LAB format
-		l := int8(c.Components[0])
-		a := int8(c.Components[1])
-		b := int8(c.Components[2])
+		// Adobe LAB: L=0-255 (maps to 0-100%), a/b=0-255 (maps to -128 to 127)
+		l := int8(math.Round(float64(c.Components[0]) / 2.55))
+		a := int8(int(c.Components[1]) - 128)
+		b := int8(int(c.Components[2]) - 128)
 		return color.NewLAB(l, a, b), nil
 
 	default:
@@ -203,9 +209,10 @@ func convertAdobeColor(c *colorbook.Color, colorType colorbook.ColorType) (color
 }
 
 // convertToAdobeColor converts a palette color to an Adobe Color Book color.
-func convertToAdobeColor(c color.Color, name string, targetType colorbook.ColorType) (*colorbook.Color, error) {
+func convertToAdobeColor(c color.Color, name string, index int, targetType colorbook.ColorType) (*colorbook.Color, error) {
 	adobeColor := &colorbook.Color{
 		Name: name,
+		Key:  generateColorKey(name, index),
 	}
 
 	switch targetType {
@@ -215,20 +222,67 @@ func convertToAdobeColor(c color.Color, name string, targetType colorbook.ColorT
 
 	case colorbook.ColorTypeCMYK:
 		cmyk := c.ToCMYK()
-		// Convert CMYK percentages to 0-255 scale for storage
-		cy := uint8((float64(cmyk.C) / 100.0) * 255)
-		mg := uint8((float64(cmyk.M) / 100.0) * 255)
-		ye := uint8((float64(cmyk.Y) / 100.0) * 255)
-		k := uint8((float64(cmyk.K) / 100.0) * 255)
+		// Adobe CMYK: 0=100%, 255=0% (inverted from percentage)
+		cy := uint8(255 - math.Round(float64(cmyk.C)/100.0*255))
+		mg := uint8(255 - math.Round(float64(cmyk.M)/100.0*255))
+		ye := uint8(255 - math.Round(float64(cmyk.Y)/100.0*255))
+		k := uint8(255 - math.Round(float64(cmyk.K)/100.0*255))
 		adobeColor.Components = [4]byte{cy, mg, ye, k}
 
 	case colorbook.ColorTypeLab:
 		lab := c.ToLAB()
-		adobeColor.Components = [4]byte{byte(lab.L), byte(lab.A), byte(lab.B), 0}
+		// Adobe LAB: L=0-255 (from 0-100%), a/b=0-255 (from -128 to 127)
+		adobeColor.Components = [4]byte{
+			byte(math.Round(float64(lab.L) * 2.55)),
+			byte(int(lab.A) + 128),
+			byte(int(lab.B) + 128),
+			0,
+		}
 
 	default:
 		return nil, fmt.Errorf("unsupported target color type: %v", targetType)
 	}
 
 	return adobeColor, nil
+}
+
+// generateColorKey creates a 6-character catalog code from the color name and index.
+// Format: First 3 chars (uppercased) + index padded to 3 digits (e.g., "RED001", "BLU042").
+func generateColorKey(name string, index int) [6]byte {
+	var key [6]byte
+
+	// Take first 3 chars of name, uppercase
+	prefix := strings.ToUpper(name)
+	if len(prefix) > 3 {
+		prefix = prefix[:3]
+	}
+
+	// Format: PREFIX + NNN (e.g., "RED001", "BLU042")
+	formatted := fmt.Sprintf("%-3s%03d", prefix, index%1000)
+	if len(formatted) > 6 {
+		formatted = formatted[:6]
+	}
+
+	copy(key[:], formatted)
+	return key
+}
+
+// generateBookID creates a unique BookID for user-generated palettes.
+// Uses FNV-1a hash of palette name, color count, and first color name.
+// Returns a value in range 4000-65535 to avoid Adobe's reserved range (3000-3022).
+func generateBookID(p *palette.Palette) colorbook.BookID {
+	h := fnv.New32a()
+	h.Write([]byte(p.Name))
+	h.Write([]byte(fmt.Sprintf(":%d:", p.Len())))
+
+	if p.Len() > 0 {
+		if nc, err := p.Get(0); err == nil {
+			h.Write([]byte(nc.Name))
+		}
+	}
+
+	hash := h.Sum32()
+	// Map to range 4000-65535
+	id := uint16(4000 + (hash % (65535 - 4000)))
+	return colorbook.BookID(id)
 }

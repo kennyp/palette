@@ -413,6 +413,26 @@
                             </select>
                         </div>
 
+                        <!-- BookID field (only for ACB output) -->
+                        <div class="form-group" x-show="targetFormat === '.acb'" x-cloak>
+                            <label for="book_id"
+                                >Book ID (optional):</label
+                            >
+                            <input
+                                type="number"
+                                name="book_id"
+                                id="book_id"
+                                x-model="bookId"
+                                min="4000"
+                                max="65535"
+                                placeholder="4000-65535 (auto-generated if empty)"
+                                style="width: 100%; padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 1rem;"
+                            />
+                            <div style="font-size: 0.85rem; color: #718096; margin-top: 0.25rem;">
+                                Unique identifier for the color book. Leave empty to auto-generate.
+                            </div>
+                        </div>
+
                         <input
                             type="file"
                             name="file"
@@ -555,6 +575,7 @@
                     file: null,
                     targetFormat: "",
                     colorSpace: "",
+                    bookId: "",
                     dragover: false,
                     converting: false,
                     error: "",
@@ -580,6 +601,7 @@
                         this.file = null;
                         this.targetFormat = "";
                         this.colorSpace = "";
+                        this.bookId = "";
                         this.error = "";
                         this.success = "";
                         this.$refs.fileInput.value = "";
@@ -610,6 +632,9 @@
                         formData.append("to", this.targetFormat);
                         if (this.colorSpace) {
                             formData.append("colorspace", this.colorSpace);
+                        }
+                        if (this.bookId && this.targetFormat === ".acb") {
+                            formData.append("book_id", this.bookId);
                         }
 
                         this.error = "";

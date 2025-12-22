@@ -71,6 +71,7 @@ func handleFavicon(w http.ResponseWriter, r *http.Request) {
 type ConvertFormRequest struct {
 	To         string `form:"to"`
 	ColorSpace string `form:"colorspace"`
+	BookID     string `form:"book_id"` // Optional: custom BookID for ACB export (4000-65535)
 }
 
 // Bind implements render.Binder for multipart form requests.
@@ -160,7 +161,7 @@ func handleConvert(w http.ResponseWriter, r *http.Request) {
 	tempOutput.Close()
 
 	// Perform conversion
-	if err := shared.ConvertFile(tempInput.Name(), tempOutput.Name(), fromFormat, data.To, data.ColorSpace); err != nil {
+	if err := shared.ConvertFile(tempInput.Name(), tempOutput.Name(), fromFormat, data.To, data.ColorSpace, data.BookID); err != nil {
 		render.Render(w, r, &ErrResponse{
 			HTTPStatusCode: http.StatusInternalServerError,
 			StatusText:     "Conversion failed",
@@ -331,8 +332,8 @@ func handleConvertJSON(w http.ResponseWriter, r *http.Request) {
 	defer os.Remove(tempOutput.Name())
 	tempOutput.Close()
 
-	// Perform conversion
-	if err := shared.ConvertFile(tempInput.Name(), tempOutput.Name(), fromFormat, toFormat, data.ColorSpace); err != nil {
+	// Perform conversion (JSON API doesn't support BookID for now - use empty string)
+	if err := shared.ConvertFile(tempInput.Name(), tempOutput.Name(), fromFormat, toFormat, data.ColorSpace, ""); err != nil {
 		render.Render(w, r, &ErrResponse{
 			HTTPStatusCode: http.StatusInternalServerError,
 			StatusText:     "Conversion failed",

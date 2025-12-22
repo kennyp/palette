@@ -17,8 +17,10 @@ import (
 )
 
 const (
-	FileType              = "8BCB" // Signature and filetype for a Color Book file.
-	DefaultVersion uint16 = 1      // Default ersion of Adobe Color Book format.
+	FileType                   = "8BCB"     // Signature and filetype for a Color Book file.
+	DefaultVersion      uint16 = 1          // Default version of Adobe Color Book format.
+	SpotFunctionProcess        = "spflproc" // Spot function identifier for process colors (RGB/CMYK).
+	SpotFunctionSpot           = "spflspot" // Spot function identifier for spot colors (LAB).
 )
 
 //go:generate go tool stringer -type=BookID -trimprefix=BookID
@@ -155,6 +157,20 @@ func (b *ColorBook) MarshalBinary() ([]byte, error) {
 		}
 	}
 
+	// Write spot function identifier (required for Photoshop CS+)
+	var spotFunc string
+	switch b.ColorType {
+	case ColorTypeRGB, ColorTypeCMYK:
+		spotFunc = SpotFunctionProcess
+	case ColorTypeLab:
+		spotFunc = SpotFunctionSpot
+	default:
+		spotFunc = SpotFunctionProcess // Default to process
+	}
+	if _, err := buf.WriteString(spotFunc); err != nil {
+		return nil, fmt.Errorf("failed to write spot function: %w", err)
+	}
+
 	return buf.Bytes(), nil
 }
 
@@ -254,6 +270,17 @@ func (b *ColorBook) UnmarshalBinary(data []byte) (err error) {
 		slog.Debug("parsed color", slog.Int("index", i), slog.Any("color", c))
 
 		b.Colors[i] = c
+	}
+
+	// Try to read spot function identifier (optional for backward compatibility)
+	if buf.Len() >= 8 {
+		spotFunc := make([]byte, 8)
+		if _, err := io.ReadFull(buf, spotFunc); err == nil {
+			sfStr := string(spotFunc)
+			if sfStr == SpotFunctionProcess || sfStr == SpotFunctionSpot {
+				slog.Debug("parsed spot function", slog.String("value", sfStr))
+			}
+		}
 	}
 
 	return nil

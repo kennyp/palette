@@ -49,6 +49,10 @@ Examples:
 				Name:  "colorspace",
 				Usage: "Convert all colors to specified color space: RGB, CMYK, LAB, HSB",
 			},
+			&cli.StringFlag{
+				Name:  "book-id",
+				Usage: "Custom BookID for ACB export (4000-65535). If not specified, one will be generated.",
+			},
 		},
 		Action: run,
 	}
@@ -60,6 +64,7 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	fromFormat := cmd.String("from")
 	toFormat := cmd.String("to")
 	colorSpace := cmd.String("colorspace")
+	bookID := cmd.String("book-id")
 
 	// Validate color space if provided
 	if colorSpace != "" {
@@ -74,7 +79,7 @@ func run(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	// Perform conversion
-	if err := shared.ConvertFile(inputPath, outputPath, fromFormat, toFormat, colorSpace); err != nil {
+	if err := shared.ConvertFile(inputPath, outputPath, fromFormat, toFormat, colorSpace, bookID); err != nil {
 		return cli.Exit(fmt.Sprintf("Error: %v", err), 1)
 	}
 

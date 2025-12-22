@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
+	"github.com/kennyp/palette/adobe/colorbook"
 	paletteio "github.com/kennyp/palette/io"
 	"github.com/kennyp/palette/palette"
 	_ "github.com/kennyp/palette/palette/all" // Initialize format importers/exporters
@@ -15,7 +17,8 @@ import (
 // If fromFormat is empty, it will be detected from the input file extension.
 // If toFormat is empty, it will be detected from the output file extension.
 // If colorSpace is non-empty, all colors will be converted to that color space.
-func ConvertFile(inputPath, outputPath, fromFormat, toFormat, colorSpace string) error {
+// If bookID is non-empty and toFormat is .acb, it will be used as the BookID (must be 4000-65535).
+func ConvertFile(inputPath, outputPath, fromFormat, toFormat, colorSpace, bookID string) error {
 	// Detect formats from file extensions if not specified
 	if fromFormat == "" {
 		fromFormat = filepath.Ext(inputPath)
@@ -59,6 +62,18 @@ func ConvertFile(inputPath, outputPath, fromFormat, toFormat, colorSpace string)
 		if err != nil {
 			return fmt.Errorf("failed to convert to color space %s: %w", colorSpace, err)
 		}
+	}
+
+	// Set custom BookID for ACB export if provided
+	if bookID != "" && (toFormat == ".acb" || toFormat == ".ACB") {
+		id, err := strconv.ParseUint(bookID, 10, 16)
+		if err != nil {
+			return fmt.Errorf("invalid book_id: must be a number between 4000-65535")
+		}
+		if id < 4000 || id > 65535 {
+			return fmt.Errorf("invalid book_id: must be between 4000-65535 (got %d)", id)
+		}
+		p.SetMetadata("book_id", colorbook.BookID(id))
 	}
 
 	// Create output file
